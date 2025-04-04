@@ -1,5 +1,7 @@
 // src/api/http.ts
 import { D1Database } from "@cloudflare/workers-types";
+// 添加标准JWT库
+import * as jwt from 'jsonwebtoken';
 
 // 定义环境变量接口
 interface Env {
@@ -145,45 +147,25 @@ export class NavigationAPI {
         }
 
         try {
-            // 简单的JWT验证实现
-            const [header, payload, signature] = token.split('.');
-            if (!header || !payload || !signature) {
-                return { valid: false };
-            }
-
-            // 解码payload
-            const decodedPayload = JSON.parse(atob(payload));
-            
-            // 检查令牌是否过期
-            if (decodedPayload.exp && decodedPayload.exp < Date.now() / 1000) {
-                return { valid: false };
-            }
-
-            // 这里简化了签名验证逻辑，实际生产环境应使用完整的JWT库
-            return { valid: true, payload: decodedPayload };
-        } catch {
-            // 任何异常都视为验证失败
+            // 使用标准JWT库验证token
+            const decoded = jwt.verify(token, this.secret) as Record<string, unknown>;
+            return { valid: true, payload: decoded };
+        } catch (error) {
+            console.error("Token验证失败:", error);
             return { valid: false };
         }
     }
 
     // 生成JWT令牌
     private generateToken(payload: Record<string, unknown>): string {
-        // 简化的JWT生成，实际生产环境应使用完整的JWT库
-        const header = { alg: 'HS256', typ: 'JWT' };
+        // 使用标准JWT库生成token
         const tokenPayload = {
             ...payload,
             exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24小时过期
             iat: Math.floor(Date.now() / 1000)
         };
-
-        const base64Header = btoa(JSON.stringify(header));
-        const base64Payload = btoa(JSON.stringify(tokenPayload));
         
-        // 简化的签名逻辑，实际生产环境应使用完整的散列算法
-        const signature = btoa(this.secret + '.' + base64Header + '.' + base64Payload);
-        
-        return `${base64Header}.${base64Payload}.${signature}`;
+        return jwt.sign(tokenPayload, this.secret, { algorithm: 'HS256' });
     }
 
     // 检查认证是否启用
@@ -222,20 +204,23 @@ export class NavigationAPI {
     }
 
     async updateGroup(id: number, group: Partial<Group>): Promise<Group | null> {
-        let query = "UPDATE groups SET updated_at = CURRENT_TIMESTAMP";
+        // 使用参数化查询，避免SQL注入
+        const updates: string[] = ["updated_at = CURRENT_TIMESTAMP"];
         const params: (string | number)[] = [];
 
+        // 安全地添加字段
         if (group.name !== undefined) {
-            query += ", name = ?";
+            updates.push("name = ?");
             params.push(group.name);
         }
 
         if (group.order_num !== undefined) {
-            query += ", order_num = ?";
+            updates.push("order_num = ?");
             params.push(group.order_num);
         }
 
-        query += " WHERE id = ? RETURNING id, name, order_num, created_at, updated_at";
+        // 构建安全的参数化查询
+        const query = `UPDATE groups SET ${updates.join(", ")} WHERE id = ? RETURNING id, name, order_num, created_at, updated_at`;
         params.push(id);
 
         const { results } = await this.db
@@ -304,46 +289,48 @@ export class NavigationAPI {
     }
 
     async updateSite(id: number, site: Partial<Site>): Promise<Site | null> {
-        let query = "UPDATE sites SET updated_at = CURRENT_TIMESTAMP";
+        // 使用参数化查询，避免SQL注入
+        const updates: string[] = ["updated_at = CURRENT_TIMESTAMP"];
         const params: (string | number)[] = [];
 
+        // 安全地添加字段
         if (site.group_id !== undefined) {
-            query += ", group_id = ?";
+            updates.push("group_id = ?");
             params.push(site.group_id);
         }
 
         if (site.name !== undefined) {
-            query += ", name = ?";
+            updates.push("name = ?");
             params.push(site.name);
         }
 
         if (site.url !== undefined) {
-            query += ", url = ?";
+            updates.push("url = ?");
             params.push(site.url);
         }
 
         if (site.icon !== undefined) {
-            query += ", icon = ?";
+            updates.push("icon = ?");
             params.push(site.icon);
         }
 
         if (site.description !== undefined) {
-            query += ", description = ?";
+            updates.push("description = ?");
             params.push(site.description);
         }
 
         if (site.notes !== undefined) {
-            query += ", notes = ?";
+            updates.push("notes = ?");
             params.push(site.notes);
         }
 
         if (site.order_num !== undefined) {
-            query += ", order_num = ?";
+            updates.push("order_num = ?");
             params.push(site.order_num);
         }
 
-        query +=
-            " WHERE id = ? RETURNING id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at";
+        // 构建安全的参数化查询
+        const query = `UPDATE sites SET ${updates.join(", ")} WHERE id = ? RETURNING id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at`;
         params.push(id);
 
         const { results } = await this.db
