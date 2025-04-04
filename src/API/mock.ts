@@ -1,4 +1,4 @@
-import { Group, Site, LoginResponse } from "./http";
+import { Group, Site, LoginResponse, ExportData } from "./http";
 
 // 模拟数据
 const mockGroups: Group[] = [
@@ -314,5 +314,48 @@ export class MockNavigationClient {
             return true;
         }
         return false;
+    }
+
+    // 数据导出
+    async exportData(): Promise<ExportData> {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return {
+            groups: [...mockGroups],
+            sites: [...mockSites],
+            configs: {...mockConfigs},
+            version: "1.0",
+            exportDate: new Date().toISOString()
+        };
+    }
+    
+    // 数据导入
+    async importData(data: ExportData): Promise<boolean> {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        try {
+            // 清空现有数据
+            mockSites.length = 0;
+            mockGroups.length = 0;
+            
+            // 导入分组数据
+            data.groups.forEach(group => {
+                mockGroups.push({...group});
+            });
+            
+            // 导入站点数据
+            data.sites.forEach(site => {
+                mockSites.push({...site});
+            });
+            
+            // 导入配置数据
+            Object.entries(data.configs).forEach(([key, value]) => {
+                mockConfigs[key] = value;
+            });
+            
+            return true;
+        } catch (error) {
+            console.error("模拟导入数据失败:", error);
+            return false;
+        }
     }
 }
