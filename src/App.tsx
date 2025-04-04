@@ -44,6 +44,11 @@ import {
     DialogContentText,
     DialogTitle,
     IconButton,
+    Menu,
+    MenuItem,
+    Divider,
+    ListItemIcon,
+    ListItemText,
 } from "@mui/material";
 import SortIcon from '@mui/icons-material/Sort';
 import SaveIcon from '@mui/icons-material/Save';
@@ -52,6 +57,10 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import SettingsIcon from '@mui/icons-material/Settings';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import LogoutIcon from '@mui/icons-material/Logout';
+import MenuIcon from '@mui/icons-material/Menu';
 
 // 根据环境选择使用真实API还是模拟API
 const isDevEnvironment = import.meta.env.DEV;
@@ -154,6 +163,25 @@ function App() {
         group_id: 0
     });
 
+    // 新增菜单状态
+    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const openMenu = Boolean(menuAnchorEl);
+    
+    // 新增导入对话框状态
+    const [openImport, setOpenImport] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importError, setImportError] = useState<string | null>(null);
+    const [importLoading, setImportLoading] = useState(false);
+
+    // 菜单打开关闭
+    const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setMenuAnchorEl(event.currentTarget);
+    };
+    
+    const handleMenuClose = () => {
+        setMenuAnchorEl(null);
+    };
+
     // 检查认证状态
     const checkAuthStatus = async () => {
         try {
@@ -229,6 +257,14 @@ function App() {
     const handleLogout = () => {
         api.logout();
         setIsAuthenticated(false);
+        setIsAuthRequired(true);
+        
+        // 清空数据
+        setGroups([]);
+        handleMenuClose();
+        
+        // 显示提示信息
+        setError("已退出登录，请重新登录");
     };
 
     // 加载配置
@@ -553,6 +589,98 @@ function App() {
         }
     };
 
+    // 处理导出数据
+    const handleExportData = async () => {
+        try {
+            setLoading(true);
+            handleMenuClose();
+            
+            const data = await api.exportData();
+            
+            // 创建Blob对象
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            
+            // 创建下载链接
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `navigation-data-${new Date().toISOString().slice(0, 10)}.json`;
+            
+            // 触发下载并清理
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+        } catch (error) {
+            console.error("导出数据失败:", error);
+            setError("导出数据失败: " + (error instanceof Error ? error.message : "未知错误"));
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    // 处理导入对话框
+    const handleOpenImport = () => {
+        setImportFile(null);
+        setImportError(null);
+        setOpenImport(true);
+        handleMenuClose();
+    };
+    
+    const handleCloseImport = () => {
+        setOpenImport(false);
+    };
+    
+    // 处理文件选择
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setImportFile(e.target.files[0]);
+            setImportError(null);
+        }
+    };
+    
+    // 处理导入数据
+    const handleImportData = async () => {
+        if (!importFile) {
+            setImportError("请选择要导入的文件");
+            return;
+        }
+        
+        try {
+            setImportLoading(true);
+            setImportError(null);
+            
+            // 读取文件内容
+            const fileContent = await importFile.text();
+            const data = JSON.parse(fileContent);
+            
+            // 验证数据格式
+            if (!data.groups || !data.sites || !data.configs) {
+                throw new Error("导入的文件格式不正确");
+            }
+            
+            // 导入数据
+            const result = await api.importData(data);
+            
+            if (result) {
+                // 关闭对话框
+                handleCloseImport();
+                // 重新加载数据
+                await fetchData();
+                await fetchConfigs();
+            } else {
+                throw new Error("导入失败");
+            }
+            
+        } catch (error) {
+            console.error("导入数据失败:", error);
+            setImportError("导入数据失败: " + (error instanceof Error ? error.message : "未知错误"));
+        } finally {
+            setImportLoading(false);
+        }
+    };
+
     // 渲染登录页面
     const renderLoginForm = () => {
         return (
@@ -662,31 +790,6 @@ function App() {
                                 </>
                             ) : (
                                 <>
-                                    {isAuthenticated && (
-                                        <Button
-                                            variant="outlined"
-                                            color="error"
-                                            onClick={handleLogout}
-                                        >
-                                            退出登录
-                                        </Button>
-                                    )}
-                                    <Button
-                                        variant="outlined"
-                                        color="primary"
-                                        startIcon={<SettingsIcon />}
-                                        onClick={handleOpenConfig}
-                                    >
-                                        网站设置
-                                    </Button>
-                                    <Button
-                                        variant="outlined"
-                                        color="primary"
-                                        startIcon={<SortIcon />}
-                                        onClick={startGroupSort}
-                                    >
-                                        编辑排序
-                                    </Button>
                                     <Button
                                         variant="contained"
                                         color="primary"
@@ -695,6 +798,64 @@ function App() {
                                     >
                                         新增分组
                                     </Button>
+                                    
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        startIcon={<MenuIcon />}
+                                        onClick={handleMenuOpen}
+                                        aria-controls={openMenu ? 'navigation-menu' : undefined}
+                                        aria-haspopup="true"
+                                        aria-expanded={openMenu ? 'true' : undefined}
+                                    >
+                                        更多选项
+                                    </Button>
+                                    <Menu
+                                        id="navigation-menu"
+                                        anchorEl={menuAnchorEl}
+                                        open={openMenu}
+                                        onClose={handleMenuClose}
+                                        MenuListProps={{
+                                            'aria-labelledby': 'navigation-button',
+                                        }}
+                                    >
+                                        <MenuItem onClick={startGroupSort}>
+                                            <ListItemIcon>
+                                                <SortIcon fontSize="small" />
+                                            </ListItemIcon>
+                                            <ListItemText>编辑排序</ListItemText>
+                                        </MenuItem>
+                                        <MenuItem onClick={handleOpenConfig}>
+                                            <ListItemIcon>
+                                                <SettingsIcon fontSize="small" />
+                                            </ListItemIcon>
+                                            <ListItemText>网站设置</ListItemText>
+                                        </MenuItem>
+                                        <Divider />
+                                        <MenuItem onClick={handleExportData}>
+                                            <ListItemIcon>
+                                                <FileDownloadIcon fontSize="small" />
+                                            </ListItemIcon>
+                                            <ListItemText>导出数据</ListItemText>
+                                        </MenuItem>
+                                        <MenuItem onClick={handleOpenImport}>
+                                            <ListItemIcon>
+                                                <FileUploadIcon fontSize="small" />
+                                            </ListItemIcon>
+                                            <ListItemText>导入数据</ListItemText>
+                                        </MenuItem>
+                                        {isAuthenticated && (
+                                            <>
+                                                <Divider />
+                                                <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+                                                    <ListItemIcon sx={{ color: 'error.main' }}>
+                                                        <LogoutIcon fontSize="small" />
+                                                    </ListItemIcon>
+                                                    <ListItemText>退出登录</ListItemText>
+                                                </MenuItem>
+                                            </>
+                                        )}
+                                    </Menu>
                                 </>
                             )}
                             <ThemeToggle darkMode={darkMode} onToggle={toggleTheme} />
@@ -975,6 +1136,69 @@ function App() {
                         <DialogActions sx={{ px: 3, pb: 3 }}>
                             <Button onClick={handleCloseConfig} variant="outlined">取消</Button>
                             <Button onClick={handleSaveConfig} variant="contained" color="primary">保存设置</Button>
+                        </DialogActions>
+                    </Dialog>
+
+                    {/* 导入数据对话框 */}
+                    <Dialog open={openImport} onClose={handleCloseImport} maxWidth="sm" fullWidth>
+                        <DialogTitle>
+                            导入数据
+                            <IconButton
+                                aria-label="close"
+                                onClick={handleCloseImport}
+                                sx={{
+                                    position: 'absolute',
+                                    right: 8,
+                                    top: 8,
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </DialogTitle>
+                        <DialogContent>
+                            <DialogContentText sx={{ mb: 2 }}>
+                                请选择要导入的JSON文件，导入将覆盖现有数据。
+                            </DialogContentText>
+                            <Box sx={{ mb: 2 }}>
+                                <Button
+                                    variant="outlined"
+                                    component="label"
+                                    startIcon={<FileUploadIcon />}
+                                    sx={{ mb: 2 }}
+                                >
+                                    选择文件
+                                    <input
+                                        type="file"
+                                        hidden
+                                        accept=".json"
+                                        onChange={handleFileSelect}
+                                    />
+                                </Button>
+                                {importFile && (
+                                    <Typography variant="body2" sx={{ mt: 1 }}>
+                                        已选择: {importFile.name}
+                                    </Typography>
+                                )}
+                            </Box>
+                            {importError && (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    {importError}
+                                </Alert>
+                            )}
+                        </DialogContent>
+                        <DialogActions sx={{ px: 3, pb: 3 }}>
+                            <Button onClick={handleCloseImport} variant="outlined">
+                                取消
+                            </Button>
+                            <Button
+                                onClick={handleImportData}
+                                variant="contained"
+                                color="primary"
+                                disabled={!importFile || importLoading}
+                                startIcon={importLoading ? <CircularProgress size={20} /> : <FileUploadIcon />}
+                            >
+                                {importLoading ? "导入中..." : "导入"}
+                            </Button>
                         </DialogActions>
                     </Dialog>
 
