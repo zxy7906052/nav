@@ -70,7 +70,17 @@ export class NavigationAPI {
 
     // 初始化数据库表
     // 修改initDB方法，将SQL语句分开执行
-    async initDB(): Promise<void> {
+    async initDB(): Promise<{ success: boolean; alreadyInitialized: boolean }> {
+        // 首先检查数据库是否已初始化
+        try {
+            const isInitialized = await this.getConfig("DB_INITIALIZED");
+            if (isInitialized === "true") {
+                return { success: true, alreadyInitialized: true };
+            }
+        } catch {
+            // 如果发生错误，可能是配置表不存在，继续初始化
+        }
+        
         // 先创建groups表
         await this.db.exec(`CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, order_num INTEGER NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`);
         
@@ -84,6 +94,11 @@ export class NavigationAPI {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );`);
+        
+        // 设置初始化标志
+        await this.setConfig("DB_INITIALIZED", "true");
+        
+        return { success: true, alreadyInitialized: false };
     }
 
     // 验证用户登录
