@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { NavigationClient } from "./API/client";
 import { MockNavigationClient } from "./API/mock";
-import { Site } from "./API/http";
+import { Site, Group } from "./API/http";
 import { GroupWithSites } from "./types";
 import ThemeToggle from "./components/ThemeToggle";
 import GroupCard from "./components/GroupCard";
@@ -35,12 +35,21 @@ import {
     Paper,
     createTheme,
     ThemeProvider,
-    CssBaseline
+    CssBaseline,
+    TextField,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    IconButton
 } from "@mui/material";
 import SortIcon from '@mui/icons-material/Sort';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 
 // 根据环境选择使用真实API还是模拟API
 const isDevEnvironment = import.meta.env.DEV;
@@ -109,6 +118,20 @@ function App() {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
+
+    // 新增状态管理
+    const [openAddGroup, setOpenAddGroup] = useState(false);
+    const [openAddSite, setOpenAddSite] = useState(false);
+    const [newGroup, setNewGroup] = useState<Partial<Group>>({ name: '', order_num: 0 });
+    const [newSite, setNewSite] = useState<Partial<Site>>({ 
+        name: '', 
+        url: '', 
+        icon: '', 
+        description: '', 
+        notes: '',
+        order_num: 0,
+        group_id: 0
+    });
 
     useEffect(() => {
         fetchData();
@@ -274,6 +297,84 @@ function App() {
         }
     };
 
+    // 新增分组相关函数
+    const handleOpenAddGroup = () => {
+        setNewGroup({ name: '', order_num: groups.length });
+        setOpenAddGroup(true);
+    };
+
+    const handleCloseAddGroup = () => {
+        setOpenAddGroup(false);
+    };
+
+    const handleGroupInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setNewGroup({
+            ...newGroup,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleCreateGroup = async () => {
+        try {
+            if (!newGroup.name) {
+                setError("分组名称不能为空");
+                return;
+            }
+
+            await api.createGroup(newGroup as Group);
+            await fetchData(); // 重新加载数据
+            handleCloseAddGroup();
+        } catch (error) {
+            console.error("创建分组失败:", error);
+            setError("创建分组失败: " + (error as Error).message);
+        }
+    };
+
+    // 新增站点相关函数
+    const handleOpenAddSite = (groupId: number) => {
+        const group = groups.find(g => g.id === groupId);
+        const maxOrderNum = group?.sites.length ? Math.max(...group.sites.map(s => s.order_num)) + 1 : 0;
+        
+        setNewSite({
+            name: '',
+            url: '',
+            icon: '',
+            description: '',
+            notes: '',
+            group_id: groupId,
+            order_num: maxOrderNum
+        });
+        
+        setOpenAddSite(true);
+    };
+
+    const handleCloseAddSite = () => {
+        setOpenAddSite(false);
+    };
+
+    const handleSiteInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setNewSite({
+            ...newSite,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleCreateSite = async () => {
+        try {
+            if (!newSite.name || !newSite.url) {
+                setError("站点名称和URL不能为空");
+                return;
+            }
+
+            await api.createSite(newSite as Site);
+            await fetchData(); // 重新加载数据
+            handleCloseAddSite();
+        } catch (error) {
+            console.error("创建站点失败:", error);
+            setError("创建站点失败: " + (error as Error).message);
+        }
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
@@ -331,14 +432,24 @@ function App() {
                                     </Button>
                                 </>
                             ) : (
-                                <Button
-                                    variant="outlined"
-                                    color="primary"
-                                    startIcon={<SortIcon />}
-                                    onClick={startGroupSort}
-                                >
-                                    编辑排序
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        startIcon={<SortIcon />}
+                                        onClick={startGroupSort}
+                                    >
+                                        编辑排序
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        startIcon={<AddIcon />}
+                                        onClick={handleOpenAddGroup}
+                                    >
+                                        新增分组
+                                    </Button>
+                                </>
                             )}
                             <ThemeToggle darkMode={darkMode} onToggle={toggleTheme} />
                         </Stack>
@@ -415,12 +526,146 @@ function App() {
                                             onDelete={handleSiteDelete}
                                             onSaveSiteOrder={handleSaveSiteOrder}
                                             onStartSiteSort={startSiteSort}
+                                            onAddSite={handleOpenAddSite}
                                         />
                                     ))}
                                 </Stack>
                             )}
                         </Box>
                     )}
+
+                    {/* 新增分组对话框 */}
+                    <Dialog open={openAddGroup} onClose={handleCloseAddGroup} maxWidth="sm" fullWidth>
+                        <DialogTitle>
+                            新增分组
+                            <IconButton
+                                aria-label="close"
+                                onClick={handleCloseAddGroup}
+                                sx={{
+                                    position: 'absolute',
+                                    right: 8,
+                                    top: 8,
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </DialogTitle>
+                        <DialogContent>
+                            <DialogContentText sx={{ mb: 2 }}>
+                                请输入新分组的信息
+                            </DialogContentText>
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                id="group-name"
+                                name="name"
+                                label="分组名称"
+                                type="text"
+                                fullWidth
+                                variant="outlined"
+                                value={newGroup.name}
+                                onChange={handleGroupInputChange}
+                                sx={{ mb: 2 }}
+                            />
+                        </DialogContent>
+                        <DialogActions sx={{ px: 3, pb: 3 }}>
+                            <Button onClick={handleCloseAddGroup} variant="outlined">取消</Button>
+                            <Button onClick={handleCreateGroup} variant="contained" color="primary">创建</Button>
+                        </DialogActions>
+                    </Dialog>
+
+                    {/* 新增站点对话框 */}
+                    <Dialog open={openAddSite} onClose={handleCloseAddSite} maxWidth="md" fullWidth>
+                        <DialogTitle>
+                            新增站点
+                            <IconButton
+                                aria-label="close"
+                                onClick={handleCloseAddSite}
+                                sx={{
+                                    position: 'absolute',
+                                    right: 8,
+                                    top: 8,
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </DialogTitle>
+                        <DialogContent>
+                            <DialogContentText sx={{ mb: 2 }}>
+                                请输入新站点的信息
+                            </DialogContentText>
+                            <Stack spacing={2}>
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <Box sx={{ flex: 1 }}>
+                                        <TextField
+                                            autoFocus
+                                            margin="dense"
+                                            id="site-name"
+                                            name="name"
+                                            label="站点名称"
+                                            type="text"
+                                            fullWidth
+                                            variant="outlined"
+                                            value={newSite.name}
+                                            onChange={handleSiteInputChange}
+                                        />
+                                    </Box>
+                                    <Box sx={{ flex: 1 }}>
+                                        <TextField
+                                            margin="dense"
+                                            id="site-url"
+                                            name="url"
+                                            label="站点URL"
+                                            type="url"
+                                            fullWidth
+                                            variant="outlined"
+                                            value={newSite.url}
+                                            onChange={handleSiteInputChange}
+                                        />
+                                    </Box>
+                                </Box>
+                                <TextField
+                                    margin="dense"
+                                    id="site-icon"
+                                    name="icon"
+                                    label="图标URL"
+                                    type="url"
+                                    fullWidth
+                                    variant="outlined"
+                                    value={newSite.icon}
+                                    onChange={handleSiteInputChange}
+                                />
+                                <TextField
+                                    margin="dense"
+                                    id="site-description"
+                                    name="description"
+                                    label="站点描述"
+                                    type="text"
+                                    fullWidth
+                                    variant="outlined"
+                                    value={newSite.description}
+                                    onChange={handleSiteInputChange}
+                                />
+                                <TextField
+                                    margin="dense"
+                                    id="site-notes"
+                                    name="notes"
+                                    label="备注"
+                                    type="text"
+                                    fullWidth
+                                    multiline
+                                    rows={2}
+                                    variant="outlined"
+                                    value={newSite.notes}
+                                    onChange={handleSiteInputChange}
+                                />
+                            </Stack>
+                        </DialogContent>
+                        <DialogActions sx={{ px: 3, pb: 3 }}>
+                            <Button onClick={handleCloseAddSite} variant="outlined">取消</Button>
+                            <Button onClick={handleCreateSite} variant="contained" color="primary">创建</Button>
+                        </DialogActions>
+                    </Dialog>
 
                     {/* GitHub角标 */}
                     <Box 
