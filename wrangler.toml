@@ -1,15 +1,14 @@
 # 项目配置
 name = "navigation-site"
-main = "src/index.ts"
+main = "functions/[[path]].js"  # 保留此行，指定 Worker 入口点
 
 # 页面配置
 [site]
 bucket = "./dist"
-entry-point = "functions"
 include = ["dist"]
 
 # D1数据库绑定
 [[d1_databases]]
 binding = "DB"
-database_name = "navigation-db"
-database_id = "您的数据库ID"
+database_name = "navigation-db-local"
+database_id = "43ff28e1-42d6-4e53-9657-0702ae1353b6"
