@@ -40,6 +40,15 @@ export interface Config {
     updated_at?: string;
 }
 
+// 导出数据接口
+export interface ExportData {
+    groups: Group[];
+    sites: Site[];
+    configs: Record<string, string>;
+    version: string;
+    exportDate: string;
+}
+
 // 新增用户登录接口
 export interface LoginRequest {
     username: string;
@@ -433,6 +442,76 @@ export class NavigationAPI {
             )
             .then(() => true)
             .catch(() => false);
+    }
+
+    // 导出所有数据
+    async exportData(): Promise<ExportData> {
+        // 获取所有分组
+        const groups = await this.getGroups();
+        
+        // 获取所有站点
+        const sites = await this.getSites();
+        
+        // 获取所有配置
+        const configs = await this.getConfigs();
+        
+        return {
+            groups,
+            sites,
+            configs,
+            version: "1.0", // 数据版本号，便于后续兼容性处理
+            exportDate: new Date().toISOString()
+        };
+    }
+    
+    // 导入所有数据
+    async importData(data: ExportData): Promise<boolean> {
+        try {
+            // 使用事务确保数据完整性
+            // 清空现有数据
+            await this.db.exec("DELETE FROM sites");
+            await this.db.exec("DELETE FROM groups");
+            
+            // 导入分组数据
+            for (const group of data.groups) {
+                await this.createGroup({
+                    name: group.name,
+                    order_num: group.order_num
+                });
+            }
+            
+            // 获取新创建的分组，用于映射ID
+            const newGroups = await this.getGroups();
+            const groupMap = new Map<number, number>();
+            
+            // 创建旧ID到新ID的映射
+            data.groups.forEach((oldGroup, index) => {
+                if (oldGroup.id && index < newGroups.length) {
+                    groupMap.set(oldGroup.id, newGroups[index].id as number);
+                }
+            });
+            
+            // 导入站点数据，更新分组ID
+            for (const site of data.sites) {
+                const newGroupId = groupMap.get(site.group_id) || site.group_id;
+                await this.createSite({
+                    ...site,
+                    group_id: newGroupId
+                });
+            }
+            
+            // 导入配置数据
+            for (const [key, value] of Object.entries(data.configs)) {
+                if (key !== "DB_INITIALIZED") { // 跳过数据库初始化标志
+                    await this.setConfig(key, value);
+                }
+            }
+            
+            return true;
+        } catch (error) {
+            console.error("导入数据失败:", error);
+            return false;
+        }
     }
 }
 
