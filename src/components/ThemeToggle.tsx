@@ -16,9 +16,34 @@ export default function ThemeToggle() {
         return false;
     });
 
+    // 监听系统主题变化
+    useEffect(() => {
+        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        
+        const handleChange = (e: MediaQueryListEvent) => {
+            // 只有在用户没有手动设置主题时才跟随系统
+            if (!localStorage.getItem("theme")) {
+                setDarkMode(e.matches);
+            }
+        };
+
+        // 初始化时检查系统主题
+        if (!localStorage.getItem("theme")) {
+            setDarkMode(mediaQuery.matches);
+        }
+
+        mediaQuery.addEventListener("change", handleChange);
+        return () => mediaQuery.removeEventListener("change", handleChange);
+    }, []);
+
     // 切换主题状态
     const toggleTheme = () => {
-        setDarkMode(!darkMode);
+        setDarkMode(prev => {
+            const newValue = !prev;
+            // 更新 localStorage
+            localStorage.setItem("theme", newValue ? "dark" : "light");
+            return newValue;
+        });
     };
 
     // 应用主题到 DOM
@@ -26,17 +51,15 @@ export default function ThemeToggle() {
         const root = window.document.documentElement;
         if (darkMode) {
             root.classList.add("dark");
-            localStorage.setItem("theme", "dark");
         } else {
             root.classList.remove("dark");
-            localStorage.setItem("theme", "light");
         }
     }, [darkMode]);
 
     return (
         <button
             onClick={toggleTheme}
-            className='p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'
+            className='p-2 cursor-pointer rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200'
             aria-label={darkMode ? "切换到亮色模式" : "切换到暗色模式"}
         >
             {darkMode ? (
