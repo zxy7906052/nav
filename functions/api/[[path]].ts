@@ -1,4 +1,4 @@
-import { NavigationAPI, LoginRequest } from "../../src/API/http";
+import { NavigationAPI, LoginRequest, ExportData } from "../../src/API/http";
 import { D1Database } from "@cloudflare/workers-types";
 
 interface Env {
@@ -143,6 +143,24 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
         } else if (path.startsWith("configs/") && method === "DELETE") {
             const key = path.substring("configs/".length);
             const result = await api.deleteConfig(key);
+            return Response.json({ success: result });
+        }
+
+        // 数据导出路由
+        else if (path === "export" && method === "GET") {
+            const data = await api.exportData();
+            return Response.json(data, {
+                headers: {
+                    "Content-Disposition": "attachment; filename=navhive-data.json",
+                    "Content-Type": "application/json"
+                }
+            });
+        }
+        
+        // 数据导入路由
+        else if (path === "import" && method === "POST") {
+            const data = await request.json() as ExportData;
+            const result = await api.importData(data);
             return Response.json({ success: result });
         }
 
