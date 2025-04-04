@@ -98,9 +98,9 @@ export default function SiteSettingsModal({
 
     // 防止滚动穿透
     useEffect(() => {
-        document.body.style.overflow = 'hidden';
+        document.body.style.overflow = "hidden";
         return () => {
-            document.body.style.overflow = '';
+            document.body.style.overflow = "";
         };
     }, []);
 
@@ -109,10 +109,10 @@ export default function SiteSettingsModal({
 
     // 使用 Portal 渲染到 body 最底部，避免受到其他元素的影响
     return createPortal(
-        <div 
+        <div
             className='fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm'
             onClick={handleBackdropClick}
-            style={{ isolation: 'isolate' }}
+            style={{ isolation: "isolate" }}
         >
             <div
                 ref={modalRef}
@@ -129,9 +129,22 @@ export default function SiteSettingsModal({
                         className='p-1.5 rounded-md text-slate-500 dark:text-slate-400 
                                    hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors'
                         onClick={onClose}
-                        aria-label="关闭"
+                        aria-label='关闭'
                     >
-                        <img src="/svg/close.svg" className="h-5 w-5" alt="关闭" />
+                        <svg
+                            xmlns='http://www.w3.org/2000/svg'
+                            className='h-5 w-5'
+                            fill='none'
+                            viewBox='0 0 24 24'
+                            stroke='currentColor'
+                        >
+                            <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M6 18L18 6M6 6l12 12'
+                            />
+                        </svg>
                     </button>
                 </div>
 
@@ -156,7 +169,7 @@ export default function SiteSettingsModal({
                                       bg-white dark:bg-slate-700/50
                                       text-slate-900 dark:text-slate-100
                                       focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-colors'
-                            placeholder="输入网站名称"
+                            placeholder='输入网站名称'
                         />
                     </div>
 
@@ -180,7 +193,7 @@ export default function SiteSettingsModal({
                                       bg-white dark:bg-slate-700/50
                                       text-slate-900 dark:text-slate-100
                                       focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-colors'
-                            placeholder="https://example.com"
+                            placeholder='https://example.com'
                         />
                     </div>
 
@@ -206,7 +219,7 @@ export default function SiteSettingsModal({
                                         className='flex items-center justify-center w-10 h-10 rounded-lg 
                                                    bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-400 
                                                    font-medium border border-sky-200 dark:border-sky-800'
-                                        aria-label="网站首字母图标"
+                                        aria-label='网站首字母图标'
                                     >
                                         {fallbackIcon}
                                     </div>
@@ -276,7 +289,7 @@ export default function SiteSettingsModal({
                                       bg-white dark:bg-slate-700/50
                                       text-slate-900 dark:text-slate-100
                                       focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-colors'
-                            placeholder="简短的网站描述"
+                            placeholder='简短的网站描述'
                         />
                     </div>
 
@@ -299,7 +312,7 @@ export default function SiteSettingsModal({
                                       bg-white dark:bg-slate-700/50
                                       text-slate-900 dark:text-slate-100
                                       focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-colors'
-                            placeholder="可选的私人备注"
+                            placeholder='可选的私人备注'
                         />
                     </div>
 

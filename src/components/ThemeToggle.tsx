@@ -19,7 +19,7 @@ export default function ThemeToggle() {
     // 监听系统主题变化
     useEffect(() => {
         const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-        
+
         const handleChange = (e: MediaQueryListEvent) => {
             // 只有在用户没有手动设置主题时才跟随系统
             if (!localStorage.getItem("theme")) {
@@ -64,10 +64,10 @@ export default function ThemeToggle() {
         >
             {darkMode ? (
                 // 太阳图标
-                <img src="/svg/sun.svg" className="h-5 w-5" alt="切换到亮色模式" />
+                <img src='/svg/sun.svg' className='h-5 w-5' alt='切换到亮色模式' />
             ) : (
                 // 月亮图标
-                <img src="/svg/moon.svg" className="h-5 w-5" alt="切换到暗色模式" />
+                <img src='/svg/moon.svg' className='h-5 w-5' alt='切换到暗色模式' />
             )}
         </button>
     );
