@@ -1,4 +1,4 @@
-import { NavigationAPI, LoginRequest, ExportData } from "../../src/API/http";
+import { NavigationAPI, LoginRequest, ExportData, Group, Site } from "../../src/API/http";
 import { D1Database } from "@cloudflare/workers-types";
 
 interface Env {
@@ -7,6 +7,157 @@ interface Env {
     AUTH_USERNAME?: string;
     AUTH_PASSWORD?: string;
     AUTH_SECRET?: string;
+}
+
+// 定义输入验证类型
+interface LoginInput {
+    username?: string;
+    password?: string;
+}
+
+interface GroupInput {
+    name?: string;
+    order_num?: number;
+}
+
+interface SiteInput {
+    group_id?: number;
+    name?: string;
+    url?: string;
+    icon?: string;
+    description?: string;
+    notes?: string;
+    order_num?: number;
+}
+
+interface ConfigInput {
+    value?: string;
+}
+
+// 输入验证函数
+function validateLogin(data: LoginInput): { valid: boolean; errors?: string[] } {
+    const errors: string[] = [];
+    
+    if (!data.username || typeof data.username !== 'string') {
+        errors.push('用户名不能为空且必须是字符串');
+    }
+    
+    if (!data.password || typeof data.password !== 'string') {
+        errors.push('密码不能为空且必须是字符串');
+    }
+    
+    return { valid: errors.length === 0, errors };
+}
+
+function validateGroup(data: GroupInput): { valid: boolean; errors?: string[]; sanitizedData?: Group } {
+    const errors: string[] = [];
+    const sanitizedData: Partial<Group> = {};
+    
+    // 验证名称
+    if (!data.name || typeof data.name !== 'string') {
+        errors.push('分组名称不能为空且必须是字符串');
+    } else {
+        sanitizedData.name = data.name.trim().slice(0, 100); // 限制长度
+    }
+    
+    // 验证排序号
+    if (data.order_num === undefined || typeof data.order_num !== 'number') {
+        errors.push('排序号必须是数字');
+    } else {
+        sanitizedData.order_num = data.order_num;
+    }
+    
+    return { 
+        valid: errors.length === 0, 
+        errors, 
+        sanitizedData: errors.length === 0 ? sanitizedData as Group : undefined 
+    };
+}
+
+function validateSite(data: SiteInput): { valid: boolean; errors?: string[]; sanitizedData?: Site } {
+    const errors: string[] = [];
+    const sanitizedData: Partial<Site> = {};
+    
+    // 验证分组ID
+    if (!data.group_id || typeof data.group_id !== 'number') {
+        errors.push('分组ID必须是数字且不能为空');
+    } else {
+        sanitizedData.group_id = data.group_id;
+    }
+    
+    // 验证名称
+    if (!data.name || typeof data.name !== 'string') {
+        errors.push('站点名称不能为空且必须是字符串');
+    } else {
+        sanitizedData.name = data.name.trim().slice(0, 100); // 限制长度
+    }
+    
+    // 验证URL
+    if (!data.url || typeof data.url !== 'string') {
+        errors.push('URL不能为空且必须是字符串');
+    } else {
+        try {
+            // 验证URL格式
+            new URL(data.url);
+            sanitizedData.url = data.url.trim();
+        } catch {
+            errors.push('无效的URL格式');
+        }
+    }
+    
+    // 验证图标URL (可选)
+    if (data.icon !== undefined) {
+        if (typeof data.icon !== 'string') {
+            errors.push('图标URL必须是字符串');
+        } else if (data.icon) {
+            try {
+                // 验证URL格式
+                new URL(data.icon);
+                sanitizedData.icon = data.icon.trim();
+            } catch {
+                errors.push('无效的图标URL格式');
+            }
+        } else {
+            sanitizedData.icon = '';
+        }
+    }
+    
+    // 验证描述 (可选)
+    if (data.description !== undefined) {
+        sanitizedData.description = typeof data.description === 'string' 
+            ? data.description.trim().slice(0, 500) // 限制长度
+            : '';
+    }
+    
+    // 验证备注 (可选)
+    if (data.notes !== undefined) {
+        sanitizedData.notes = typeof data.notes === 'string'
+            ? data.notes.trim().slice(0, 1000) // 限制长度
+            : '';
+    }
+    
+    // 验证排序号
+    if (data.order_num === undefined || typeof data.order_num !== 'number') {
+        errors.push('排序号必须是数字');
+    } else {
+        sanitizedData.order_num = data.order_num;
+    }
+    
+    return { 
+        valid: errors.length === 0, 
+        errors, 
+        sanitizedData: errors.length === 0 ? sanitizedData as Site : undefined 
+    };
+}
+
+function validateConfig(data: ConfigInput): { valid: boolean; errors?: string[] } {
+    const errors: string[] = [];
+    
+    if (!data.value || typeof data.value !== 'string') {
+        errors.push('配置值不能为空且必须是字符串');
+    }
+    
+    return { valid: errors.length === 0, errors };
 }
 
 export const onRequest = async (context: { request: Request; env: Env }) => {
@@ -20,8 +171,18 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
     try {
         // 登录路由 - 不需要验证
         if (path === "login" && method === "POST") {
-            const loginData = await request.json() as LoginRequest;
-            const result = await api.login(loginData);
+            const loginData = await request.json();
+            
+            // 验证登录数据
+            const validation = validateLogin(loginData);
+            if (!validation.valid) {
+                return Response.json({
+                    success: false,
+                    message: `验证失败: ${validation.errors?.join(', ')}`
+                }, { status: 400 });
+            }
+            
+            const result = await api.login(loginData as LoginRequest);
             return Response.json(result);
         }
         
@@ -64,33 +225,61 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
             }
         }
 
-        // 初始化数据库（如果需要）
-        // await api.initDB();
-        // 在路由匹配部分添加
-        // if (path === "init" && method === "GET") {
-        //     await api.initDB();
-        //     return new Response("数据库初始化成功", { status: 200 });
-        // }
-
         // 路由匹配
         if (path === "groups" && method === "GET") {
             const groups = await api.getGroups();
             return Response.json(groups);
         } else if (path.startsWith("groups/") && method === "GET") {
             const id = parseInt(path.split("/")[1]);
+            if (isNaN(id)) {
+                return Response.json({ error: "无效的ID" }, { status: 400 });
+            }
             const group = await api.getGroup(id);
             return Response.json(group);
         } else if (path === "groups" && method === "POST") {
             const data = await request.json();
-            const result = await api.createGroup(data);
+            
+            // 验证分组数据
+            const validation = validateGroup(data);
+            if (!validation.valid) {
+                return Response.json({
+                    success: false,
+                    message: `验证失败: ${validation.errors?.join(', ')}`
+                }, { status: 400 });
+            }
+            
+            const result = await api.createGroup(validation.sanitizedData as Group);
             return Response.json(result);
         } else if (path.startsWith("groups/") && method === "PUT") {
             const id = parseInt(path.split("/")[1]);
+            if (isNaN(id)) {
+                return Response.json({ error: "无效的ID" }, { status: 400 });
+            }
+            
             const data = await request.json();
+            // 对修改的字段进行验证
+            if (data.name !== undefined && (typeof data.name !== 'string' || data.name.trim() === '')) {
+                return Response.json({
+                    success: false,
+                    message: "分组名称不能为空且必须是字符串"
+                }, { status: 400 });
+            }
+            
+            if (data.order_num !== undefined && typeof data.order_num !== 'number') {
+                return Response.json({
+                    success: false,
+                    message: "排序号必须是数字"
+                }, { status: 400 });
+            }
+            
             const result = await api.updateGroup(id, data);
             return Response.json(result);
         } else if (path.startsWith("groups/") && method === "DELETE") {
             const id = parseInt(path.split("/")[1]);
+            if (isNaN(id)) {
+                return Response.json({ error: "无效的ID" }, { status: 400 });
+            }
+            
             const result = await api.deleteGroup(id);
             return Response.json({ success: result });
         }
@@ -101,29 +290,113 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
             return Response.json(sites);
         } else if (path.startsWith("sites/") && method === "GET") {
             const id = parseInt(path.split("/")[1]);
+            if (isNaN(id)) {
+                return Response.json({ error: "无效的ID" }, { status: 400 });
+            }
+            
             const site = await api.getSite(id);
             return Response.json(site);
         } else if (path === "sites" && method === "POST") {
             const data = await request.json();
-            const result = await api.createSite(data);
+            
+            // 验证站点数据
+            const validation = validateSite(data);
+            if (!validation.valid) {
+                return Response.json({
+                    success: false,
+                    message: `验证失败: ${validation.errors?.join(', ')}`
+                }, { status: 400 });
+            }
+            
+            const result = await api.createSite(validation.sanitizedData as Site);
             return Response.json(result);
         } else if (path.startsWith("sites/") && method === "PUT") {
             const id = parseInt(path.split("/")[1]);
+            if (isNaN(id)) {
+                return Response.json({ error: "无效的ID" }, { status: 400 });
+            }
+            
             const data = await request.json();
+            
+            // 验证更新的站点数据
+            if (data.url !== undefined) {
+                try {
+                    new URL(data.url);
+                } catch {
+                    return Response.json({
+                        success: false,
+                        message: "无效的URL格式"
+                    }, { status: 400 });
+                }
+            }
+            
+            if (data.icon !== undefined && data.icon !== '') {
+                try {
+                    new URL(data.icon);
+                } catch {
+                    return Response.json({
+                        success: false,
+                        message: "无效的图标URL格式"
+                    }, { status: 400 });
+                }
+            }
+            
             const result = await api.updateSite(id, data);
             return Response.json(result);
         } else if (path.startsWith("sites/") && method === "DELETE") {
             const id = parseInt(path.split("/")[1]);
+            if (isNaN(id)) {
+                return Response.json({ error: "无效的ID" }, { status: 400 });
+            }
+            
             const result = await api.deleteSite(id);
             return Response.json({ success: result });
         }
         // 批量更新排序
         else if (path === "group-orders" && method === "PUT") {
             const data = await request.json();
+            
+            // 验证排序数据
+            if (!Array.isArray(data)) {
+                return Response.json({
+                    success: false,
+                    message: "排序数据必须是数组"
+                }, { status: 400 });
+            }
+            
+            for (const item of data) {
+                if (!item.id || typeof item.id !== 'number' || 
+                    item.order_num === undefined || typeof item.order_num !== 'number') {
+                    return Response.json({
+                        success: false,
+                        message: "排序数据格式无效，每个项目必须包含id和order_num"
+                    }, { status: 400 });
+                }
+            }
+            
             const result = await api.updateGroupOrder(data);
             return Response.json({ success: result });
         } else if (path === "site-orders" && method === "PUT") {
             const data = await request.json();
+            
+            // 验证排序数据
+            if (!Array.isArray(data)) {
+                return Response.json({
+                    success: false,
+                    message: "排序数据必须是数组"
+                }, { status: 400 });
+            }
+            
+            for (const item of data) {
+                if (!item.id || typeof item.id !== 'number' || 
+                    item.order_num === undefined || typeof item.order_num !== 'number') {
+                    return Response.json({
+                        success: false,
+                        message: "排序数据格式无效，每个项目必须包含id和order_num"
+                    }, { status: 400 });
+                }
+            }
+            
             const result = await api.updateSiteOrder(data);
             return Response.json({ success: result });
         }
@@ -137,8 +410,18 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
             return Response.json({ key, value });
         } else if (path.startsWith("configs/") && method === "PUT") {
             const key = path.substring("configs/".length);
-            const { value } = await request.json();
-            const result = await api.setConfig(key, value);
+            const data = await request.json();
+            
+            // 验证配置数据
+            const validation = validateConfig(data);
+            if (!validation.valid) {
+                return Response.json({
+                    success: false,
+                    message: `验证失败: ${validation.errors?.join(', ')}`
+                }, { status: 400 });
+            }
+            
+            const result = await api.setConfig(key, data.value);
             return Response.json({ success: result });
         } else if (path.startsWith("configs/") && method === "DELETE") {
             const key = path.substring("configs/".length);
@@ -159,14 +442,27 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
         
         // 数据导入路由
         else if (path === "import" && method === "POST") {
-            const data = await request.json() as ExportData;
-            const result = await api.importData(data);
+            const data = await request.json();
+            
+            // 验证导入数据
+            if (!data.groups || !Array.isArray(data.groups) ||
+                !data.sites || !Array.isArray(data.sites) ||
+                !data.configs || typeof data.configs !== 'object') {
+                return Response.json({
+                    success: false,
+                    message: "导入数据格式无效"
+                }, { status: 400 });
+            }
+            
+            const result = await api.importData(data as ExportData);
             return Response.json({ success: result });
         }
 
         // 默认返回404
         return new Response("Not Found", { status: 404 });
     } catch (error) {
-        return new Response(`Error: ${error.message}`, { status: 500 });
+        // 安全处理错误，不暴露内部细节
+        console.error(`API错误: ${error instanceof Error ? error.message : '未知错误'}`);
+        return new Response(`处理请求时发生错误`, { status: 500 });
     }
 };
