@@ -310,8 +310,28 @@ function App() {
             document.head.appendChild(styleElement);
         }
         
-        styleElement.textContent = customCss || "";
+        // 添加安全过滤，防止CSS注入攻击
+        const sanitizedCss = sanitizeCSS(customCss || "");
+        styleElement.textContent = sanitizedCss;
     }, [configs]);
+
+    // CSS安全过滤函数
+    const sanitizeCSS = (css: string): string => {
+        if (!css) return "";
+        
+        // 移除可能导致XSS的内容
+        return css
+            // 移除包含javascript:的URL
+            .replace(/url\s*\(\s*(['"]?)javascript:/gi, 'url($1invalid:')
+            // 移除expression
+            .replace(/expression\s*\(/gi, 'invalid(')
+            // 移除import
+            .replace(/@import/gi, '/* @import */')
+            // 移除behavior
+            .replace(/behavior\s*:/gi, '/* behavior: */')
+            // 过滤content属性中的不安全内容
+            .replace(/content\s*:\s*(['"]?).*?url\s*\(\s*(['"]?)javascript:/gi, 'content: $1');
+    };
 
     // 同步HTML的class以保持与现有CSS兼容
     useEffect(() => {
