@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250404.0
+        version: 4.20250404.0
       react:
         specifier: ^19.0.0
         version: 19.1.0
@@ -133,6 +136,9 @@ packages:
   '@babel/types@7.27.0':
     resolution: {integrity: sha512-H45s8fVLYjbhFH62dIJ3WtmJ6RSPt/3DRO0ZcT2SUiYiQyz3BLVb9ADEnLl91m74aQPS3AzzeajZHYOalWe3bg==}
     engines: {node: '>=6.9.0'}
+
+  '@cloudflare/workers-types@4.20250404.0':
+    resolution: {integrity: sha512-XB8LNS9spWcxU56Tt/RPl0S06oyXfZCSDVKBbzjHYZtgN5kZP4UtTR01t16HUfo330EtJOo8cdo/PbiBAwRNIg==}
 
   '@esbuild/aix-ppc64@0.25.2':
     resolution: {integrity: sha512-wCIboOL2yXZym2cgm6mlA742s9QeJ8DjGVaL39dLN4rRwrOgOyYSnOaFPhKZGLb2ngj4EyfAFjsNJwPXZvseag==}
@@ -1189,6 +1195,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
+
+  '@cloudflare/workers-types@4.20250404.0': {}
 
   '@esbuild/aix-ppc64@0.25.2':
     optional: true
