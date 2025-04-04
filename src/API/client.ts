@@ -1,4 +1,4 @@
-import { Group, Site, LoginResponse } from "./http";
+import { Group, Site, LoginResponse, ExportData } from "./http";
 
 export class NavigationClient {
     private baseUrl: string;
@@ -217,6 +217,20 @@ export class NavigationClient {
         const response = await this.request("site-orders", {
             method: "PUT",
             body: JSON.stringify(siteOrders),
+        });
+        return response.success;
+    }
+
+    // 数据导出
+    async exportData(): Promise<ExportData> {
+        return this.request("export");
+    }
+    
+    // 数据导入
+    async importData(data: ExportData): Promise<boolean> {
+        const response = await this.request("import", {
+            method: "POST",
+            body: JSON.stringify(data),
         });
         return response.success;
     }
