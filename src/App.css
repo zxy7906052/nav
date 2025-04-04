@@ -1,4 +1,21 @@
 .duration-0 {
     --tw-duration: 0ms;
     transition-duration: 0ms;
+    transition-delay: 0ms;
+}
+
+/* 优化拖拽体验 */
+[data-dnd-draggable-context="true"] {
+    transition: none !important;
+}
+
+[data-dragging="true"] {
+    transition: none !important;
+    transform: translate3d(var(--translate-x, 0), var(--translate-y, 0), 0) !important;
+    z-index: 9999 !important;
+}
+
+[data-dnd-draggable] {
+    transform-origin: 0 0;
+    contain: layout;
 }
