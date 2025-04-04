@@ -1,12 +1,17 @@
 import { useState, useEffect } from "react";
 import { NavigationClient } from "./API/client";
 import { MockNavigationClient } from "./API/mock";
-import { Group, Site } from "./API/http";
+import { Group } from "./API/http";
 import "./App.css";
 
 // 根据环境选择使用真实API还是模拟API
 const isDevEnvironment = import.meta.env.DEV;
-const api = isDevEnvironment ? new MockNavigationClient() : new NavigationClient();
+const useRealApi = import.meta.env.VITE_USE_REAL_API === "true";
+
+const api =
+    isDevEnvironment && !useRealApi
+        ? new MockNavigationClient()
+        : new NavigationClient(isDevEnvironment ? "http://localhost:8788/api" : "/api");
 
 function App() {
     const [groups, setGroups] = useState<Group[]>([]);
