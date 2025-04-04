@@ -4,6 +4,10 @@ import { Site } from "../API/http";
 import SiteSettingsModal from "./SiteSettingsModal";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+// 引入Material UI组件
+import { Card, CardContent, CardActionArea, Typography, Skeleton, IconButton, Box, Fade } from "@mui/material";
+import SettingsIcon from '@mui/icons-material/Settings';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
 interface SiteCardProps {
     site: Site;
@@ -23,6 +27,7 @@ const SiteCard = memo(function SiteCard({
 }: SiteCardProps) {
     const [showSettings, setShowSettings] = useState(false);
     const [iconError, setIconError] = useState(!site.icon);
+    const [imageLoaded, setImageLoaded] = useState(false);
 
     // 使用dnd-kit的useSortable hook
     const {
@@ -72,76 +77,222 @@ const SiteCard = memo(function SiteCard({
         setIconError(true);
     };
 
+    // 处理图片加载完成
+    const handleImageLoad = () => {
+        setImageLoaded(true);
+    };
+
     // 卡片内容
     const cardContent = (
-        <div
-            className={`relative group flex flex-col min-h-[8rem] p-4 rounded-xl transition duration-300 ease-in-out 
-                       bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl 
-                       border border-slate-200 dark:border-slate-700/60 
-                       hover:border-slate-300 dark:hover:border-slate-600 
-                       ${!isEditMode ? "hover:-translate-y-1 cursor-pointer" : "cursor-grab"} 
-                       ${isEditMode ? "m-1" : ""} 
-                       ${isDragging ? "ring-2 ring-sky-500" : ""}`}
-            onClick={isEditMode ? undefined : handleCardClick}
+        <Box 
+            sx={{ 
+                height: '100%',
+                position: 'relative',
+                transition: 'transform 0.3s ease-in-out',
+                ...((!isEditMode) && {
+                    '&:hover': {
+                        transform: 'translateY(-4px)'
+                    }
+                })
+            }}
         >
-            {/* 图标和名称 */}
-            <div className='flex items-center mb-2'>
-                {!iconError && site.icon ? (
-                    <img
-                        src={site.icon}
-                        alt={site.name}
-                        className='w-8 h-8 mr-3 rounded-md object-cover'
-                        onError={handleIconError}
-                    />
-                ) : (
-                    <div
-                        className='flex items-center justify-center w-8 h-8 mr-3 rounded-md 
-                                  bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-400 
-                                  font-medium border border-sky-200 dark:border-sky-800'
-                        aria-label={`${site.name} 的首字母图标`}
+            <Card 
+                sx={{ 
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRadius: 3,
+                    transition: 'box-shadow 0.3s ease-in-out',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: isDragging ? 8 : 2,
+                    '&:hover': !isEditMode ? {
+                        boxShadow: 5
+                    } : {},
+                    overflow: 'hidden'
+                }}
+            >
+                {isEditMode ? (
+                    <Box 
+                        sx={{ 
+                            height: '100%', 
+                            p: 2, 
+                            cursor: 'grab',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}
                     >
-                        {fallbackIcon}
-                    </div>
+                        <Box position="absolute" top={8} right={8}>
+                            <DragIndicatorIcon fontSize="small" color="primary" />
+                        </Box>
+                        {/* 图标和名称 */}
+                        <Box display="flex" alignItems="center" mb={1}>
+                            {!iconError && site.icon ? (
+                                <Box position="relative" mr={1.5} width={32} height={32}>
+                                    <Skeleton
+                                        variant="rounded"
+                                        width={32}
+                                        height={32}
+                                        sx={{ 
+                                            display: !imageLoaded ? 'block' : 'none',
+                                            position: 'absolute'
+                                        }}
+                                    />
+                                    <Fade in={imageLoaded} timeout={500}>
+                                        <Box
+                                            component="img"
+                                            src={site.icon}
+                                            alt={site.name}
+                                            sx={{
+                                                width: 32,
+                                                height: 32,
+                                                borderRadius: 1,
+                                                objectFit: 'cover'
+                                            }}
+                                            onError={handleIconError}
+                                            onLoad={handleImageLoad}
+                                        />
+                                    </Fade>
+                                </Box>
+                            ) : (
+                                <Box
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        mr: 1.5,
+                                        borderRadius: 1,
+                                        bgcolor: 'primary.light',
+                                        color: 'primary.main',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        border: 1,
+                                        borderColor: 'primary.main',
+                                        opacity: 0.8
+                                    }}
+                                >
+                                    {fallbackIcon}
+                                </Box>
+                            )}
+                            <Typography variant="subtitle1" fontWeight="medium" noWrap>
+                                {site.name}
+                            </Typography>
+                        </Box>
+
+                        {/* 描述 */}
+                        <Typography 
+                            variant="body2" 
+                            color="text.secondary" 
+                            sx={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                flexGrow: 1
+                            }}
+                        >
+                            {site.description || "暂无描述"}
+                        </Typography>
+                    </Box>
+                ) : (
+                    <CardActionArea onClick={handleCardClick} sx={{ height: '100%' }}>
+                        <CardContent sx={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            {/* 图标和名称 */}
+                            <Box display="flex" alignItems="center" mb={1}>
+                                {!iconError && site.icon ? (
+                                    <Box position="relative" mr={1.5} width={32} height={32}>
+                                        <Skeleton
+                                            variant="rounded"
+                                            width={32}
+                                            height={32}
+                                            sx={{ 
+                                                display: !imageLoaded ? 'block' : 'none',
+                                                position: 'absolute'
+                                            }}
+                                        />
+                                        <Fade in={imageLoaded} timeout={500}>
+                                            <Box
+                                                component="img"
+                                                src={site.icon}
+                                                alt={site.name}
+                                                sx={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    borderRadius: 1,
+                                                    objectFit: 'cover'
+                                                }}
+                                                onError={handleIconError}
+                                                onLoad={handleImageLoad}
+                                            />
+                                        </Fade>
+                                    </Box>
+                                ) : (
+                                    <Box
+                                        sx={{
+                                            width: 32,
+                                            height: 32,
+                                            mr: 1.5,
+                                            borderRadius: 1,
+                                            bgcolor: 'primary.light',
+                                            color: 'primary.main',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            border: 1,
+                                            borderColor: 'primary.main',
+                                            opacity: 0.8
+                                        }}
+                                    >
+                                        {fallbackIcon}
+                                    </Box>
+                                )}
+                                <Typography variant="subtitle1" fontWeight="medium" noWrap>
+                                    {site.name}
+                                </Typography>
+                            </Box>
+
+                            {/* 描述 */}
+                            <Typography 
+                                variant="body2" 
+                                color="text.secondary" 
+                                sx={{
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    flexGrow: 1
+                                }}
+                            >
+                                {site.description || "暂无描述"}
+                            </Typography>
+
+                            {/* 设置按钮 */}
+                            <IconButton
+                                size="small"
+                                sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    bgcolor: 'action.hover',
+                                    opacity: 0,
+                                    transition: 'opacity 0.2s',
+                                    '&:hover': {
+                                        bgcolor: 'action.selected',
+                                    },
+                                    '.MuiCardActionArea-root:hover &': {
+                                        opacity: 1
+                                    }
+                                }}
+                                onClick={handleSettingsClick}
+                                aria-label="网站设置"
+                            >
+                                <SettingsIcon fontSize="small" />
+                            </IconButton>
+                        </CardContent>
+                    </CardActionArea>
                 )}
-                <h3 className='font-semibold text-slate-900 dark:text-white truncate'>
-                    {site.name}
-                </h3>
-            </div>
-
-            {/* 描述 */}
-            <p className='text-sm text-slate-600 dark:text-slate-400 line-clamp-2 flex-grow mb-2'>
-                {site.description || "暂无描述"}
-            </p>
-
-            {/* 编辑模式提示 */}
-            {isEditMode && (
-                <div
-                    className='absolute top-2 right-2 p-1.5 rounded-md 
-                              bg-sky-100 dark:bg-sky-900 
-                              text-sky-600 dark:text-sky-400
-                              text-xs flex items-center'
-                >
-                    <img src='/svg/drag-sort.svg' className='w-3.5 h-3.5 mr-1' alt='拖拽排序' />
-                    拖拽排序
-                </div>
-            )}
-
-            {/* 设置按钮 - 悬停时显示 */}
-            {!isEditMode && (
-                <button
-                    className='absolute top-2 right-2 p-1.5 rounded-md 
-                              bg-slate-100 dark:bg-slate-700 
-                              text-slate-500 dark:text-slate-400
-                              opacity-0 group-hover:opacity-100 transition-opacity duration-200
-                              hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-300
-                              z-10'
-                    onClick={handleSettingsClick}
-                    aria-label='网站设置'
-                >
-                    <img src='/svg/settings-gear.svg' className='h-4 w-4' alt='设置' />
-                </button>
-            )}
-        </div>
+            </Card>
+        </Box>
     );
 
     if (isEditMode) {
