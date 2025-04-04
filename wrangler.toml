@@ -1,6 +1,6 @@
 # 项目配置
 name = "navigation-site"
-main = "functions/[[path]].js"  # 保留此行，指定 Worker 入口点
+main = "functions/api/[[path]].js"  # 保留此行，指定 Worker 入口点
 
 # 页面配置
 [site]
