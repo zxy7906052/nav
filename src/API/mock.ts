@@ -7,22 +7,22 @@ const mockGroups: Group[] = [
         name: "常用工具",
         order_num: 1,
         created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
+        updated_at: "2024-01-01T00:00:00Z",
     },
     {
         id: 2,
         name: "开发资源",
         order_num: 2,
         created_at: "2024-01-01T20:00:00Z",
-        updated_at: "2024-01-01T30:00:00Z"
+        updated_at: "2024-01-01T30:00:00Z",
     },
     {
         id: 3,
         name: "开发资源3",
         order_num: 3,
         created_at: "2024-01-01T40:00:00Z",
-        updated_at: "2024-01-01T50:00:00Z"
-    }
+        updated_at: "2024-01-01T50:00:00Z",
+    },
 ];
 
 const mockSites: Site[] = [
@@ -31,36 +31,36 @@ const mockSites: Site[] = [
         group_id: 1,
         name: "Google",
         url: "https://www.google.com",
-        icon: "google.png",
+        icon: "https://img.zhengmi.org/file/1742480539412_微信图片_20240707011628.jpg",
         description: "搜索引擎",
         notes: "",
         order_num: 1,
         created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
+        updated_at: "2024-01-01T00:00:00Z",
     },
     {
         id: 2,
         group_id: 1,
         name: "GitHub",
         url: "https://github.com",
-        icon: "github.png",
+        icon: "https://img.zhengmi.org/file/1742480539412_微信图片_20240707011628.jpg",
         description: "代码托管平台",
         notes: "",
         order_num: 2,
         created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
+        updated_at: "2024-01-01T00:00:00Z",
     },
     {
         id: 3,
         group_id: 1,
         name: "Google",
         url: "https://www.google.com",
-        icon: "google.png",
+        icon: "https://img.zhengmi.org/file/1742480539412_微信图片_20240707011628.jpg",
         description: "搜索引擎",
         notes: "",
         order_num: 1,
         created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
+        updated_at: "2024-01-01T00:00:00Z",
     },
     {
         id: 4,
@@ -72,8 +72,32 @@ const mockSites: Site[] = [
         notes: "",
         order_num: 2,
         created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-    }
+        updated_at: "2024-01-01T00:00:00Z",
+    },
+    {
+        id: 5,
+        group_id: 1,
+        name: "GitHub",
+        url: "https://github.com",
+        icon: "github.png",
+        description: "代码托管平台",
+        notes: "",
+        order_num: 2,
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+    },
+    {
+        id: 6,
+        group_id: 1,
+        name: "GitHub",
+        url: "https://github.com",
+        icon: "github.png",
+        description: "代码托管平台6",
+        notes: "",
+        order_num: 2,
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+    },
 ];
 
 // 模拟API实现
