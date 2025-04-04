@@ -5,6 +5,7 @@ import { Site, Group } from "./API/http";
 import { GroupWithSites } from "./types";
 import ThemeToggle from "./components/ThemeToggle";
 import GroupCard from "./components/GroupCard";
+import LoginForm from "./components/LoginForm";
 import "./App.css";
 import {
     DndContext,
@@ -42,7 +43,7 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    IconButton
+    IconButton,
 } from "@mui/material";
 import SortIcon from '@mui/icons-material/Sort';
 import SaveIcon from '@mui/icons-material/Save';
@@ -50,6 +51,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 // 根据环境选择使用真实API还是模拟API
 const isDevEnvironment = import.meta.env.DEV;
@@ -66,6 +68,13 @@ enum SortMode {
     GroupSort, // 分组排序
     SiteSort, // 站点排序
 }
+
+// 默认配置
+const DEFAULT_CONFIGS = {
+    "site.title": "导航站",
+    "site.name": "导航站",
+    "site.customCss": ""
+};
 
 function App() {
     // 主题模式状态
@@ -100,6 +109,18 @@ function App() {
     const [sortMode, setSortMode] = useState<SortMode>(SortMode.None);
     const [currentSortingGroupId, setCurrentSortingGroupId] = useState<number | null>(null);
 
+    // 新增认证状态
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
+    const [isAuthRequired, setIsAuthRequired] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [loginError, setLoginError] = useState<string | null>(null);
+    const [loginLoading, setLoginLoading] = useState(false);
+
+    // 配置状态
+    const [configs, setConfigs] = useState<Record<string, string>>(DEFAULT_CONFIGS);
+    const [openConfig, setOpenConfig] = useState(false);
+    const [tempConfigs, setTempConfigs] = useState<Record<string, string>>(DEFAULT_CONFIGS);
+
     // 配置传感器，支持鼠标、触摸和键盘操作
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -133,12 +154,128 @@ function App() {
         group_id: 0
     });
 
+    // 检查认证状态
+    const checkAuthStatus = async () => {
+        try {
+            setIsAuthChecking(true);
+            console.log("开始检查认证状态...");
+            
+            // 尝试进行API调用，检查是否需要认证
+            const result = await api.checkAuthStatus();
+            console.log("认证检查结果:", result);
+            
+            if (!result) {
+                // 未认证，需要登录
+                console.log("未认证，设置需要登录状态");
+                
+                // 如果有token但无效，清除它
+                if (api.isLoggedIn()) {
+                    console.log("清除无效token");
+                    api.logout();
+                }
+                
+                // 直接更新状态，确保先设置认证状态再结束检查
+                setIsAuthenticated(false);
+                setIsAuthRequired(true);
+            } else {
+                // 直接更新认证状态
+                setIsAuthenticated(true);
+                setIsAuthRequired(false);
+                
+                // 如果已经登录或不需要认证，继续加载数据
+                console.log("已认证，开始加载数据");
+                await fetchData();
+                await fetchConfigs();
+            }
+        } catch (error) {
+            console.error("认证检查失败:", error);
+            // 如果返回401，说明需要认证
+            if (error instanceof Error && error.message.includes("认证")) {
+                console.log("检测到认证错误，设置需要登录状态");
+                setIsAuthenticated(false);
+                setIsAuthRequired(true);
+            }
+        } finally {
+            console.log("认证检查完成");
+            setIsAuthChecking(false);
+        }
+    };
+
+    // 处理登录
+    const handleLogin = async (username: string, password: string) => {
+        try {
+            setLoginLoading(true);
+            setLoginError(null);
+            
+            const result = await api.login(username, password);
+            
+            if (result.success) {
+                setIsAuthenticated(true);
+                // 登录成功后加载数据
+                await fetchData();
+                await fetchConfigs();
+            } else {
+                setLoginError(result.message || "登录失败");
+            }
+        } catch (error) {
+            console.error("登录失败:", error);
+            setLoginError("登录请求失败: " + (error instanceof Error ? error.message : "未知错误"));
+        } finally {
+            setLoginLoading(false);
+        }
+    };
+
+    // 处理登出
+    const handleLogout = () => {
+        api.logout();
+        setIsAuthenticated(false);
+    };
+
+    // 加载配置
+    const fetchConfigs = async () => {
+        try {
+            const configsData = await api.getConfigs();
+            setConfigs({
+                ...DEFAULT_CONFIGS,
+                ...configsData
+            });
+            setTempConfigs({
+                ...DEFAULT_CONFIGS,
+                ...configsData
+            });
+        } catch (error) {
+            console.error("加载配置失败:", error);
+            // 使用默认配置
+        }
+    };
+
     useEffect(() => {
-        fetchData();
+        // 检查认证状态
+        checkAuthStatus();
+        
         // 确保初始化时重置排序状态
         setSortMode(SortMode.None);
         setCurrentSortingGroupId(null);
     }, []);
+
+    // 设置文档标题
+    useEffect(() => {
+        document.title = configs["site.title"] || "导航站";
+    }, [configs]);
+
+    // 应用自定义CSS
+    useEffect(() => {
+        const customCss = configs["site.customCss"];
+        let styleElement = document.getElementById("custom-style");
+        
+        if (!styleElement) {
+            styleElement = document.createElement("style");
+            styleElement.id = "custom-style";
+            document.head.appendChild(styleElement);
+        }
+        
+        styleElement.textContent = customCss || "";
+    }, [configs]);
 
     // 同步HTML的class以保持与现有CSS兼容
     useEffect(() => {
@@ -172,7 +309,13 @@ function App() {
             setGroups(groupsWithSites);
         } catch (error) {
             console.error("加载数据失败:", error);
-            setError("加载数据失败: " + (error as Error).message);
+            setError("加载数据失败: " + (error instanceof Error ? error.message : "未知错误"));
+            
+            // 如果因为认证问题导致加载失败，处理认证状态
+            if (error instanceof Error && error.message.includes("认证")) {
+                setIsAuthRequired(true);
+                setIsAuthenticated(false);
+            }
         } finally {
             setLoading(false);
         }
@@ -375,6 +518,92 @@ function App() {
         }
     };
 
+    // 配置相关函数
+    const handleOpenConfig = () => {
+        setTempConfigs({...configs});
+        setOpenConfig(true);
+    };
+
+    const handleCloseConfig = () => {
+        setOpenConfig(false);
+    };
+
+    const handleConfigInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTempConfigs({
+            ...tempConfigs,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleSaveConfig = async () => {
+        try {
+            // 保存所有配置
+            for (const [key, value] of Object.entries(tempConfigs)) {
+                if (configs[key] !== value) {
+                    await api.setConfig(key, value);
+                }
+            }
+            
+            // 更新配置状态
+            setConfigs({...tempConfigs});
+            handleCloseConfig();
+        } catch (error) {
+            console.error("保存配置失败:", error);
+            setError("保存配置失败: " + (error as Error).message);
+        }
+    };
+
+    // 渲染登录页面
+    const renderLoginForm = () => {
+        return (
+            <Box 
+                sx={{ 
+                    minHeight: '100vh', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    bgcolor: 'background.default'
+                }}
+            >
+                <LoginForm 
+                    onLogin={handleLogin}
+                    loading={loginLoading}
+                    error={loginError}
+                />
+            </Box>
+        );
+    };
+
+    // 如果正在检查认证状态，显示加载界面
+    if (isAuthChecking) {
+        return (
+            <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <Box 
+                    sx={{ 
+                        minHeight: '100vh', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        bgcolor: 'background.default'
+                    }}
+                >
+                    <CircularProgress size={60} thickness={4} />
+                </Box>
+            </ThemeProvider>
+        );
+    }
+
+    // 如果需要认证但未认证，显示登录界面
+    if (isAuthRequired && !isAuthenticated) {
+        return (
+            <ThemeProvider theme={theme}>
+                <CssBaseline />
+                {renderLoginForm()}
+            </ThemeProvider>
+        );
+    }
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
@@ -407,7 +636,7 @@ function App() {
                             fontWeight="bold" 
                             color="text.primary"
                         >
-                            导航站
+                            {configs["site.name"]}
                         </Typography>
                         <Stack direction="row" spacing={2} alignItems="center">
                             {sortMode !== SortMode.None ? (
@@ -433,6 +662,23 @@ function App() {
                                 </>
                             ) : (
                                 <>
+                                    {isAuthenticated && (
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            onClick={handleLogout}
+                                        >
+                                            退出登录
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        startIcon={<SettingsIcon />}
+                                        onClick={handleOpenConfig}
+                                    >
+                                        网站设置
+                                    </Button>
                                     <Button
                                         variant="outlined"
                                         color="primary"
@@ -664,6 +910,71 @@ function App() {
                         <DialogActions sx={{ px: 3, pb: 3 }}>
                             <Button onClick={handleCloseAddSite} variant="outlined">取消</Button>
                             <Button onClick={handleCreateSite} variant="contained" color="primary">创建</Button>
+                        </DialogActions>
+                    </Dialog>
+
+                    {/* 网站配置对话框 */}
+                    <Dialog open={openConfig} onClose={handleCloseConfig} maxWidth="md" fullWidth>
+                        <DialogTitle>
+                            网站设置
+                            <IconButton
+                                aria-label="close"
+                                onClick={handleCloseConfig}
+                                sx={{
+                                    position: 'absolute',
+                                    right: 8,
+                                    top: 8,
+                                }}
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                        </DialogTitle>
+                        <DialogContent>
+                            <DialogContentText sx={{ mb: 2 }}>
+                                配置网站的基本信息和外观
+                            </DialogContentText>
+                            <Stack spacing={2}>
+                                <TextField
+                                    margin="dense"
+                                    id="site-title"
+                                    name="site.title"
+                                    label="网站标题 (浏览器标签)"
+                                    type="text"
+                                    fullWidth
+                                    variant="outlined"
+                                    value={tempConfigs["site.title"]}
+                                    onChange={handleConfigInputChange}
+                                />
+                                <TextField
+                                    margin="dense"
+                                    id="site-name"
+                                    name="site.name"
+                                    label="网站名称 (显示在页面中)"
+                                    type="text"
+                                    fullWidth
+                                    variant="outlined"
+                                    value={tempConfigs["site.name"]}
+                                    onChange={handleConfigInputChange}
+                                />
+                                <TextField
+                                    margin="dense"
+                                    id="site-custom-css"
+                                    name="site.customCss"
+                                    label="自定义CSS"
+                                    type="text"
+                                    fullWidth
+                                    multiline
+                                    rows={6}
+                                    variant="outlined"
+                                    value={tempConfigs["site.customCss"]}
+                                    onChange={handleConfigInputChange}
+                                    placeholder="/* 自定义样式 */\nbody { }"
+                                />
+                            </Stack>
+                        </DialogContent>
+                        <DialogActions sx={{ px: 3, pb: 3 }}>
+                            <Button onClick={handleCloseConfig} variant="outlined">取消</Button>
+                            <Button onClick={handleSaveConfig} variant="contained" color="primary">保存设置</Button>
                         </DialogActions>
                     </Dialog>
 
