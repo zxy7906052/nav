@@ -27,6 +27,7 @@ import {
 } from "@mui/material";
 import SortIcon from '@mui/icons-material/Sort';
 import SaveIcon from '@mui/icons-material/Save';
+import AddIcon from '@mui/icons-material/Add';
 
 // 更新组件属性接口
 interface GroupCardProps {
@@ -38,6 +39,7 @@ interface GroupCardProps {
     onDelete: (siteId: number) => void;
     onSaveSiteOrder: (groupId: number, sites: Site[]) => void;
     onStartSiteSort: (groupId: number) => void;
+    onAddSite?: (groupId: number) => void; // 新增添加卡片的可选回调函数
 }
 
 const GroupCard: React.FC<GroupCardProps> = ({
@@ -48,6 +50,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
     onDelete,
     onSaveSiteOrder,
     onStartSiteSort,
+    onAddSite,
 }) => {
     // 添加本地状态来管理站点排序
     const [sites, setSites] = useState<Site[]>(group.sites);
@@ -224,7 +227,8 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 >
                     {group.name}
                 </Typography>
-                <Box display="flex" gap={1}>
+                
+                <Box>
                     {isCurrentEditingGroup ? (
                         <Button
                             variant="contained"
@@ -237,15 +241,29 @@ const GroupCard: React.FC<GroupCardProps> = ({
                         </Button>
                     ) : (
                         sortMode === "None" && (
-                            <Button
-                                variant="outlined"
-                                color="primary"
-                                size="small"
-                                startIcon={<SortIcon />}
-                                onClick={() => onStartSiteSort(group.id!)}
-                            >
-                                排序
-                            </Button>
+                            <>
+                                {onAddSite && (
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        size="small"
+                                        onClick={() => onAddSite(group.id!)}
+                                        sx={{ mr: 1 }}
+                                        startIcon={<AddIcon />}
+                                    >
+                                        添加卡片
+                                    </Button>
+                                )}
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<SortIcon />}
+                                    onClick={() => onStartSiteSort(group.id!)}
+                                >
+                                    排序
+                                </Button>
+                            </>
                         )
                     )}
                 </Box>
