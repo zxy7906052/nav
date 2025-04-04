@@ -4,6 +4,10 @@ import { D1Database } from "@cloudflare/workers-types";
 // 定义环境变量接口
 interface Env {
     DB: D1Database;
+    AUTH_ENABLED?: string; // 是否启用身份验证
+    AUTH_USERNAME?: string; // 认证用户名
+    AUTH_PASSWORD?: string; // 认证密码
+    AUTH_SECRET?: string;   // JWT密钥
 }
 
 // 数据类型定义
@@ -28,12 +32,40 @@ export interface Site {
     updated_at?: string;
 }
 
+// 新增配置接口
+export interface Config {
+    key: string;
+    value: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+// 新增用户登录接口
+export interface LoginRequest {
+    username: string;
+    password: string;
+}
+
+export interface LoginResponse {
+    success: boolean;
+    token?: string;
+    message?: string;
+}
+
 // API 类
 export class NavigationAPI {
     private db: D1Database;
+    private authEnabled: boolean;
+    private username: string;
+    private password: string;
+    private secret: string;
 
     constructor(env: Env) {
         this.db = env.DB;
+        this.authEnabled = env.AUTH_ENABLED === "true";
+        this.username = env.AUTH_USERNAME || "";
+        this.password = env.AUTH_PASSWORD || "";
+        this.secret = env.AUTH_SECRET || "默认密钥，建议在生产环境中设置";
     }
 
     // 初始化数据库表
@@ -44,6 +76,95 @@ export class NavigationAPI {
         
         // 再创建sites表
         await this.db.exec(`CREATE TABLE IF NOT EXISTS sites (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, name TEXT NOT NULL, url TEXT NOT NULL, icon TEXT, description TEXT, notes TEXT, order_num INTEGER NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE);`);
+        
+        // 创建全局配置表
+        await this.db.exec(`CREATE TABLE IF NOT EXISTS configs (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );`);
+    }
+
+    // 验证用户登录
+    async login(loginRequest: LoginRequest): Promise<LoginResponse> {
+        // 如果未启用身份验证，直接返回成功
+        if (!this.authEnabled) {
+            return {
+                success: true,
+                token: this.generateToken({ username: "guest" }),
+                message: "身份验证未启用，默认登录成功"
+            };
+        }
+
+        // 验证用户名和密码
+        if (loginRequest.username === this.username && loginRequest.password === this.password) {
+            // 生成JWT令牌
+            const token = this.generateToken({ username: loginRequest.username });
+            return {
+                success: true,
+                token,
+                message: "登录成功"
+            };
+        }
+
+        return {
+            success: false,
+            message: "用户名或密码错误"
+        };
+    }
+
+    // 验证令牌有效性
+    verifyToken(token: string): { valid: boolean; payload?: Record<string, unknown> } {
+        if (!this.authEnabled) {
+            return { valid: true };
+        }
+
+        try {
+            // 简单的JWT验证实现
+            const [header, payload, signature] = token.split('.');
+            if (!header || !payload || !signature) {
+                return { valid: false };
+            }
+
+            // 解码payload
+            const decodedPayload = JSON.parse(atob(payload));
+            
+            // 检查令牌是否过期
+            if (decodedPayload.exp && decodedPayload.exp < Date.now() / 1000) {
+                return { valid: false };
+            }
+
+            // 这里简化了签名验证逻辑，实际生产环境应使用完整的JWT库
+            return { valid: true, payload: decodedPayload };
+        } catch {
+            // 任何异常都视为验证失败
+            return { valid: false };
+        }
+    }
+
+    // 生成JWT令牌
+    private generateToken(payload: Record<string, unknown>): string {
+        // 简化的JWT生成，实际生产环境应使用完整的JWT库
+        const header = { alg: 'HS256', typ: 'JWT' };
+        const tokenPayload = {
+            ...payload,
+            exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24小时过期
+            iat: Math.floor(Date.now() / 1000)
+        };
+
+        const base64Header = btoa(JSON.stringify(header));
+        const base64Payload = btoa(JSON.stringify(tokenPayload));
+        
+        // 简化的签名逻辑，实际生产环境应使用完整的散列算法
+        const signature = btoa(this.secret + '.' + base64Header + '.' + base64Payload);
+        
+        return `${base64Header}.${base64Payload}.${signature}`;
+    }
+
+    // 检查认证是否启用
+    isAuthEnabled(): boolean {
+        return this.authEnabled;
     }
 
     // 分组相关 API
@@ -210,6 +331,59 @@ export class NavigationAPI {
 
     async deleteSite(id: number): Promise<boolean> {
         const result = await this.db.prepare("DELETE FROM sites WHERE id = ?").bind(id).run();
+        return result.success;
+    }
+
+    // 配置相关API
+    async getConfigs(): Promise<Record<string, string>> {
+        const { results } = await this.db
+            .prepare("SELECT key, value FROM configs")
+            .all<Config>();
+        
+        // 将结果转换为键值对对象
+        const configs: Record<string, string> = {};
+        for (const config of results) {
+            configs[config.key] = config.value;
+        }
+        
+        return configs;
+    }
+
+    async getConfig(key: string): Promise<string | null> {
+        const result = await this.db
+            .prepare("SELECT value FROM configs WHERE key = ?")
+            .bind(key)
+            .first<{ value: string }>();
+        
+        return result ? result.value : null;
+    }
+
+    async setConfig(key: string, value: string): Promise<boolean> {
+        try {
+            // 使用UPSERT语法（SQLite支持）
+            const result = await this.db
+                .prepare(
+                    `INSERT INTO configs (key, value, updated_at) 
+                    VALUES (?, ?, CURRENT_TIMESTAMP) 
+                    ON CONFLICT(key) 
+                    DO UPDATE SET value = ?, updated_at = CURRENT_TIMESTAMP`
+                )
+                .bind(key, value, value)
+                .run();
+            
+            return result.success;
+        } catch (error) {
+            console.error("设置配置失败:", error);
+            return false;
+        }
+    }
+
+    async deleteConfig(key: string): Promise<boolean> {
+        const result = await this.db
+            .prepare("DELETE FROM configs WHERE key = ?")
+            .bind(key)
+            .run();
+        
         return result.success;
     }
 
