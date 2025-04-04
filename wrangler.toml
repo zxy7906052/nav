@@ -1,3 +1,14 @@
+# 项目配置
+name = "navigation-site"
+main = "src/index.ts"
+
+# 页面配置
+[site]
+bucket = "./dist"
+entry-point = "functions"
+include = ["dist"]
+
+# D1数据库绑定
 [[d1_databases]]
 binding = "DB"
 database_name = "navigation-db"
