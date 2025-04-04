@@ -84,7 +84,7 @@ export class NavigationClient {
     }
 
     // 批量更新排序
-    async updateGroupOrder(groupOrders: { id: number; order: number }[]): Promise<boolean> {
+    async updateGroupOrder(groupOrders: { id: number; order_num: number }[]): Promise<boolean> {
         const response = await this.request("group-orders", {
             method: "PUT",
             body: JSON.stringify(groupOrders),
@@ -92,7 +92,7 @@ export class NavigationClient {
         return response.success;
     }
 
-    async updateSiteOrder(siteOrders: { id: number; order: number }[]): Promise<boolean> {
+    async updateSiteOrder(siteOrders: { id: number; order_num: number }[]): Promise<boolean> {
         const response = await this.request("site-orders", {
             method: "PUT",
             body: JSON.stringify(siteOrders),

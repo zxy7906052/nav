@@ -5,17 +5,17 @@ const mockGroups: Group[] = [
     {
         id: 1,
         name: "常用工具",
-        order: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        order_num: 1,
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z"
     },
     {
         id: 2,
         name: "开发资源",
-        order: 2,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-    },
+        order_num: 2,
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z"
+    }
 ];
 
 const mockSites: Site[] = [
@@ -27,9 +27,9 @@ const mockSites: Site[] = [
         icon: "google.png",
         description: "搜索引擎",
         notes: "",
-        order: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        order_num: 1,
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z"
     },
     {
         id: 2,
@@ -39,10 +39,10 @@ const mockSites: Site[] = [
         icon: "github.png",
         description: "代码托管平台",
         notes: "",
-        order: 2,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-    },
+        order_num: 2,
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z"
+    }
 ];
 
 // 模拟API实现
@@ -140,23 +140,23 @@ export class MockNavigationClient {
         return true;
     }
 
-    async updateGroupOrder(groupOrders: { id: number; order: number }[]): Promise<boolean> {
+    async updateGroupOrder(groupOrders: { id: number; order_num: number }[]): Promise<boolean> {
         await new Promise(resolve => setTimeout(resolve, 200));
         for (const order of groupOrders) {
             const index = mockGroups.findIndex(g => g.id === order.id);
             if (index !== -1) {
-                mockGroups[index].order = order.order;
+                mockGroups[index].order_num = order.order_num;
             }
         }
         return true;
     }
 
-    async updateSiteOrder(siteOrders: { id: number; order: number }[]): Promise<boolean> {
+    async updateSiteOrder(siteOrders: { id: number; order_num: number }[]): Promise<boolean> {
         await new Promise(resolve => setTimeout(resolve, 200));
         for (const order of siteOrders) {
             const index = mockSites.findIndex(s => s.id === order.id);
             if (index !== -1) {
-                mockSites[index].order = order.order;
+                mockSites[index].order_num = order.order_num;
             }
         }
         return true;

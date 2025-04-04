@@ -10,7 +10,7 @@ interface Env {
 export interface Group {
     id?: number;
     name: string;
-    order: number;
+    order_num: number;
     created_at?: string;
     updated_at?: string;
 }
@@ -23,7 +23,7 @@ export interface Site {
     icon: string;
     description: string;
     notes: string;
-    order: number;
+    order_num: number;
     created_at?: string;
     updated_at?: string;
 }
@@ -50,7 +50,7 @@ export class NavigationAPI {
     async getGroups(): Promise<Group[]> {
         const { results } = await this.db
             .prepare(
-                "SELECT id, name, order_num as order, created_at, updated_at FROM groups ORDER BY order_num"
+                "SELECT id, name, order_num, created_at, updated_at FROM groups ORDER BY order_num"
             )
             .all<Group>();
         return results;
@@ -59,7 +59,7 @@ export class NavigationAPI {
     async getGroup(id: number): Promise<Group | null> {
         const result = await this.db
             .prepare(
-                "SELECT id, name, order_num as order, created_at, updated_at FROM groups WHERE id = ?"
+                "SELECT id, name, order_num, created_at, updated_at FROM groups WHERE id = ?"
             )
             .bind(id)
             .first<Group>();
@@ -69,9 +69,9 @@ export class NavigationAPI {
     async createGroup(group: Group): Promise<Group> {
         const { results } = await this.db
             .prepare(
-                "INSERT INTO groups (name, order_num) VALUES (?, ?) RETURNING id, name, order_num as order, created_at, updated_at"
+                "INSERT INTO groups (name, order_num) VALUES (?, ?) RETURNING id, name, order_num, created_at, updated_at"
             )
-            .bind(group.name, group.order)
+            .bind(group.name, group.order_num)
             .all<Group>();
         return results[0];
     }
@@ -85,12 +85,12 @@ export class NavigationAPI {
             params.push(group.name);
         }
 
-        if (group.order !== undefined) {
+        if (group.order_num !== undefined) {
             query += ", order_num = ?";
-            params.push(group.order);
+            params.push(group.order_num);
         }
 
-        query += " WHERE id = ? RETURNING id, name, order_num as order, created_at, updated_at";
+        query += " WHERE id = ? RETURNING id, name, order_num, created_at, updated_at";
         params.push(id);
 
         const { results } = await this.db
@@ -108,7 +108,7 @@ export class NavigationAPI {
     // 网站相关 API
     async getSites(groupId?: number): Promise<Site[]> {
         let query =
-            "SELECT id, group_id, name, url, icon, description, notes, order_num as order, created_at, updated_at FROM sites";
+            "SELECT id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at FROM sites";
         const params: (string | number)[] = [];
 
         if (groupId !== undefined) {
@@ -128,7 +128,7 @@ export class NavigationAPI {
     async getSite(id: number): Promise<Site | null> {
         const result = await this.db
             .prepare(
-                "SELECT id, group_id, name, url, icon, description, notes, order_num as order, created_at, updated_at FROM sites WHERE id = ?"
+                "SELECT id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at FROM sites WHERE id = ?"
             )
             .bind(id)
             .first<Site>();
@@ -141,7 +141,7 @@ export class NavigationAPI {
                 `
       INSERT INTO sites (group_id, name, url, icon, description, notes, order_num) 
       VALUES (?, ?, ?, ?, ?, ?, ?) 
-      RETURNING id, group_id, name, url, icon, description, notes, order_num as order, created_at, updated_at
+      RETURNING id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at
     `
             )
             .bind(
@@ -151,7 +151,7 @@ export class NavigationAPI {
                 site.icon || "",
                 site.description || "",
                 site.notes || "",
-                site.order
+                site.order_num
             )
             .all<Site>();
 
@@ -192,13 +192,13 @@ export class NavigationAPI {
             params.push(site.notes);
         }
 
-        if (site.order !== undefined) {
+        if (site.order_num !== undefined) {
             query += ", order_num = ?";
-            params.push(site.order);
+            params.push(site.order_num);
         }
 
         query +=
-            " WHERE id = ? RETURNING id, group_id, name, url, icon, description, notes, order_num as order, created_at, updated_at";
+            " WHERE id = ? RETURNING id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at";
         params.push(id);
 
         const { results } = await this.db
@@ -214,7 +214,7 @@ export class NavigationAPI {
     }
 
     // 批量更新排序
-    async updateGroupOrder(groupOrders: { id: number; order: number }[]): Promise<boolean> {
+    async updateGroupOrder(groupOrders: { id: number; order_num: number }[]): Promise<boolean> {
         // 使用事务确保所有更新一起成功或失败
         return await this.db
             .batch(
@@ -223,14 +223,14 @@ export class NavigationAPI {
                         .prepare(
                             "UPDATE groups SET order_num = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
                         )
-                        .bind(item.order, item.id)
+                        .bind(item.order_num, item.id)
                 )
             )
             .then(() => true)
             .catch(() => false);
     }
 
-    async updateSiteOrder(siteOrders: { id: number; order: number }[]): Promise<boolean> {
+    async updateSiteOrder(siteOrders: { id: number; order_num: number }[]): Promise<boolean> {
         // 使用事务确保所有更新一起成功或失败
         return await this.db
             .batch(
@@ -239,7 +239,7 @@ export class NavigationAPI {
                         .prepare(
                             "UPDATE sites SET order_num = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
                         )
-                        .bind(item.order, item.id)
+                        .bind(item.order_num, item.id)
                 )
             )
             .then(() => true)

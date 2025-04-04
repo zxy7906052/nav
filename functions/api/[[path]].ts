@@ -17,10 +17,10 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
         // 初始化数据库（如果需要）
         // await api.initDB();
         // 在路由匹配部分添加
-        if (path === "init" && method === "GET") {
-            await api.initDB();
-            return new Response("数据库初始化成功", { status: 200 });
-        }
+        // if (path === "init" && method === "GET") {
+        //     await api.initDB();
+        //     return new Response("数据库初始化成功", { status: 200 });
+        // }
 
         // 路由匹配
         if (path === "groups" && method === "GET") {
