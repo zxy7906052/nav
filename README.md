@@ -46,7 +46,7 @@ NaviHive 是一个精美的网站导航管理系统，帮助你整理和管理�
 
 <details>
 <summary><b>网站设置</b></summary>
-<img src="https://img.zhengmi.org/file/1743801680785_image.png" alt="网站设置" width="100%">
+<img src="https://img.zhengmi.org/file/1743801939121_image.png" alt="网站设置" width="100%">
 </details>
 
 <details>
