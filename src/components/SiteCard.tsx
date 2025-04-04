@@ -11,59 +11,84 @@ interface SiteCardProps {
 
 export default function SiteCard({ site, onUpdate, onDelete }: SiteCardProps) {
     const [showSettings, setShowSettings] = useState(false);
+    const [iconError, setIconError] = useState(!site.icon);
 
     // 如果没有图标，使用首字母作为图标
     const fallbackIcon = site.name.charAt(0).toUpperCase();
 
+    // 处理设置按钮点击
+    const handleSettingsClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // 阻止卡片点击事件
+        e.preventDefault(); // 防止默认行为
+        setShowSettings(true);
+    };
+
+    // 处理关闭设置
+    const handleCloseSettings = () => {
+        setShowSettings(false);
+    };
+
+    // 处理卡片点击
+    const handleCardClick = () => {
+        if (site.url) {
+            window.open(site.url, "_blank");
+        }
+    };
+
+    // 处理图标加载错误
+    const handleIconError = () => {
+        setIconError(true);
+    };
+
     return (
         <>
             <div
-                className='relative group flex flex-col h-32 p-4 rounded-lg transition-all 
-                           bg-white dark:bg-gray-800 shadow-md hover:shadow-lg 
-                           border border-gray-200 dark:border-gray-700 cursor-pointer'
-                onClick={() => window.open(site.url, "_blank")}
+                className='relative group flex flex-col min-h-[8rem] p-4 rounded-xl transition-all duration-300 ease-in-out 
+                           bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl 
+                           border border-slate-200 dark:border-slate-700/60 
+                           hover:border-slate-300 dark:hover:border-slate-600 
+                           hover:-translate-y-1 cursor-pointer'
+                onClick={handleCardClick}
             >
                 {/* 图标和名称 */}
                 <div className='flex items-center mb-2'>
-                    {site.icon ? (
+                    {!iconError && site.icon ? (
                         <img
                             src={site.icon}
                             alt={site.name}
-                            className='w-8 h-8 mr-3 rounded-md'
-                            onError={e => {
-                                // 图标加载失败时，隐藏图片
-                                (e.target as HTMLImageElement).style.display = "none";
-                            }}
+                            className='w-8 h-8 mr-3 rounded-md object-cover'
+                            onError={handleIconError}
                         />
                     ) : (
                         <div
                             className='flex items-center justify-center w-8 h-8 mr-3 rounded-md 
-                                       bg-blue-500 dark:bg-blue-600 text-white'
+                                      bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-400 
+                                      font-medium border border-sky-200 dark:border-sky-800'
+                            aria-label={`${site.name} 的首字母图标`}
                         >
                             {fallbackIcon}
                         </div>
                     )}
-                    <h3 className='font-medium text-gray-900 dark:text-gray-100 truncate'>
+                    <h3 className='font-semibold text-slate-900 dark:text-white truncate'>
                         {site.name}
                     </h3>
                 </div>
 
                 {/* 描述 */}
-                <p className='text-sm text-gray-600 dark:text-gray-400 line-clamp-2 flex-grow'>
-                    {site.description || "无描述"}
+                <p className='text-sm text-slate-600 dark:text-slate-400 line-clamp-2 flex-grow mb-2'>
+                    {site.description || '暂无描述'}
                 </p>
 
                 {/* 设置按钮 - 悬停时显示 */}
                 <button
                     className='absolute top-2 right-2 p-1.5 rounded-md 
-                              bg-gray-100 dark:bg-gray-700 
-                              text-gray-600 dark:text-gray-300
-                              opacity-0 group-hover:opacity-100 transition-opacity
-                              hover:bg-gray-200 dark:hover:bg-gray-600'
-                    onClick={e => {
-                        e.stopPropagation(); // 阻止卡片点击事件
-                        setShowSettings(true);
-                    }}
+                              bg-slate-100 dark:bg-slate-700 
+                              text-slate-500 dark:text-slate-400
+                              opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                              hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-300
+                              z-10'
+                    onClick={handleSettingsClick}
+                    aria-label="网站设置"
                 >
                     <svg
                         xmlns='http://www.w3.org/2000/svg'
@@ -94,7 +119,7 @@ export default function SiteCard({ site, onUpdate, onDelete }: SiteCardProps) {
                     site={site}
                     onUpdate={onUpdate}
                     onDelete={onDelete}
-                    onClose={() => setShowSettings(false)}
+                    onClose={handleCloseSettings}
                 />
             )}
         </>
