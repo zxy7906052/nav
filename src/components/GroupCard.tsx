@@ -18,6 +18,15 @@ import {
     sortableKeyboardCoordinates,
     horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
+// 引入Material UI组件
+import { 
+    Paper, 
+    Typography, 
+    Button, 
+    Box
+} from "@mui/material";
+import SortIcon from '@mui/icons-material/Sort';
+import SaveIcon from '@mui/icons-material/Save';
 
 // 更新组件属性接口
 interface GroupCardProps {
@@ -105,18 +114,40 @@ const GroupCard: React.FC<GroupCardProps> = ({
                         items={sitesToRender.map(site => `site-${site.id}`)}
                         strategy={horizontalListSortingStrategy}
                     >
-                        <div className='grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-5'>
-                            {sitesToRender.map((site, idx) => (
-                                <SiteCard
-                                    key={site.id || idx}
-                                    site={site}
-                                    onUpdate={onUpdate}
-                                    onDelete={onDelete}
-                                    isEditMode={true}
-                                    index={idx}
-                                />
-                            ))}
-                        </div>
+                        <Box sx={{ width: '100%' }}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    margin: -1, // 抵消内部padding，确保边缘对齐
+                                }}
+                            >
+                                {sitesToRender.map((site, idx) => (
+                                    <Box 
+                                        key={site.id || idx} 
+                                        sx={{ 
+                                            width: {
+                                                xs: '50%',
+                                                sm: '50%',
+                                                md: '25%',
+                                                lg: '25%',
+                                                xl: '25%'
+                                            },
+                                            padding: 1, // 内部间距，更均匀的分布
+                                            boxSizing: 'border-box', // 确保padding不影响宽度计算
+                                        }}
+                                    >
+                                        <SiteCard
+                                            site={site}
+                                            onUpdate={onUpdate}
+                                            onDelete={onDelete}
+                                            isEditMode={true}
+                                            index={idx}
+                                        />
+                                    </Box>
+                                ))}
+                            </Box>
+                        </Box>
                     </SortableContext>
                 </DndContext>
             );
@@ -124,17 +155,37 @@ const GroupCard: React.FC<GroupCardProps> = ({
 
         // 普通模式下的渲染
         return (
-            <div className='grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-5'>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    margin: -1, // 抵消内部padding，确保边缘对齐
+                }}
+            >
                 {sitesToRender.map(site => (
-                    <SiteCard
-                        key={site.id}
-                        site={site}
-                        onUpdate={onUpdate}
-                        onDelete={onDelete}
-                        isEditMode={false}
-                    />
+                    <Box 
+                        key={site.id} 
+                        sx={{ 
+                            width: {
+                                xs: '50%',
+                                sm: '50%',
+                                md: '25%',
+                                lg: '25%',
+                                xl: '25%'
+                            },
+                            padding: 1, // 内部间距，更均匀的分布
+                            boxSizing: 'border-box', // 确保padding不影响宽度计算
+                        }}
+                    >
+                        <SiteCard
+                            site={site}
+                            onUpdate={onUpdate}
+                            onDelete={onDelete}
+                            isEditMode={false}
+                        />
+                    </Box>
                 ))}
-            </div>
+            </Box>
         );
     };
 
@@ -145,41 +196,64 @@ const GroupCard: React.FC<GroupCardProps> = ({
 
     // 正常模式或站点排序模式下渲染完整的分组卡片
     return (
-        <div
-            className={`bg-white dark:bg-slate-800/50 rounded-xl shadow-lg border border-transparent dark:border-slate-700/50 p-6 transition duration-300 ease-in-out ${
-                sortMode === "None"
-                    ? "hover:shadow-xl hover:scale-[1.01] hover:border-slate-300 dark:hover:border-slate-600"
-                    : "hover:border-slate-300 dark:hover:border-slate-600"
-            }`}
+        <Paper
+            elevation={sortMode === "None" ? 2 : 3}
+            sx={{
+                borderRadius: 4,
+                p: 3,
+                transition: 'all 0.3s ease-in-out',
+                border: '1px solid transparent',
+                '&:hover': {
+                    boxShadow: sortMode === "None" ? 6 : 3,
+                    borderColor: 'divider',
+                    transform: sortMode === "None" ? 'scale(1.01)' : 'none'
+                }
+            }}
         >
-            <div className='flex justify-between items-center mb-5'>
-                <h2 className='text-2xl font-semibold text-slate-900 dark:text-white'>
+            <Box 
+                display="flex" 
+                justifyContent="space-between" 
+                alignItems="center" 
+                mb={2.5}
+            >
+                <Typography 
+                    variant="h5" 
+                    component="h2" 
+                    fontWeight="600" 
+                    color="text.primary"
+                >
                     {group.name}
-                </h2>
-                <div className='flex items-center gap-2'>
+                </Typography>
+                <Box display="flex" gap={1}>
                     {isCurrentEditingGroup ? (
-                        <button
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            startIcon={<SaveIcon />}
                             onClick={handleSaveSiteOrder}
-                            className='px-3 py-1 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors'
                         >
                             保存顺序
-                        </button>
+                        </Button>
                     ) : (
                         sortMode === "None" && (
-                            <button
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                size="small"
+                                startIcon={<SortIcon />}
                                 onClick={() => onStartSiteSort(group.id!)}
-                                className='px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors'
                             >
                                 排序
-                            </button>
+                            </Button>
                         )
                     )}
-                </div>
-            </div>
+                </Box>
+            </Box>
 
             {/* 站点卡片区域 */}
             {renderSites()}
-        </div>
+        </Paper>
     );
 };
 
