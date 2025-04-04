@@ -1,4 +1,4 @@
-import { Group, Site } from "./http";
+import { Group, Site, LoginResponse } from "./http";
 
 // 模拟数据
 const mockGroups: Group[] = [
@@ -100,8 +100,81 @@ const mockSites: Site[] = [
     },
 ];
 
+// 添加模拟配置数据
+const mockConfigs: Record<string, string> = {
+    "site.title": "我的导航站",
+    "site.name": "个人导航",
+    "site.customCss": ""
+};
+
 // 模拟API实现
 export class MockNavigationClient {
+    private token: string | null = null;
+
+    constructor() {
+        // 从本地存储加载令牌
+        if (typeof localStorage !== 'undefined') {
+            this.token = localStorage.getItem('auth_token');
+        }
+    }
+
+    // 检查是否已登录
+    isLoggedIn(): boolean {
+        return !!this.token;
+    }
+
+    // 设置认证令牌
+    setToken(token: string): void {
+        this.token = token;
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('auth_token', token);
+        }
+    }
+
+    // 清除认证令牌
+    clearToken(): void {
+        this.token = null;
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('auth_token');
+        }
+    }
+
+    // 登录API
+    async login(username: string, password: string): Promise<LoginResponse> {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log(username, password);
+        // 模拟登录验证逻辑 - 在Mock环境中任何账号密码都能登录
+        const token = btoa(`${username}:${new Date().getTime()}`);
+        this.setToken(token);
+
+        return {
+            success: true,
+            token: token,
+            message: "登录成功(模拟环境)"
+        };
+    }
+
+    // 登出
+    logout(): void {
+        this.clearToken();
+    }
+
+    // 检查身份验证状态
+    async checkAuthStatus(): Promise<boolean> {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // 模拟真实环境中的行为：如果有token则认为已认证
+        if (this.token) {
+            return true;
+        }
+        
+        // 开发环境中，也可以设置为总是返回true，便于开发
+        // return true;
+        
+        // 没有token则需要登录
+        return false;
+    }
+
     async getGroups(): Promise<Group[]> {
         // 模拟网络延迟
         await new Promise(resolve => setTimeout(resolve, 200));
@@ -215,5 +288,31 @@ export class MockNavigationClient {
             }
         }
         return true;
+    }
+
+    // 配置相关API
+    async getConfigs(): Promise<Record<string, string>> {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return { ...mockConfigs };
+    }
+
+    async getConfig(key: string): Promise<string | null> {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return mockConfigs[key] || null;
+    }
+
+    async setConfig(key: string, value: string): Promise<boolean> {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        mockConfigs[key] = value;
+        return true;
+    }
+
+    async deleteConfig(key: string): Promise<boolean> {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        if (key in mockConfigs) {
+            delete mockConfigs[key];
+            return true;
+        }
+        return false;
     }
 }
