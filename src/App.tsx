@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { NavigationClient } from "./API/client";
 import { MockNavigationClient } from "./API/mock";
 import { Site } from "./API/http";
@@ -23,6 +23,24 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import SortableGroupItem from "./components/SortableGroupItem";
+// Material UI 导入
+import { 
+    Container, 
+    Typography, 
+    Box, 
+    Button, 
+    CircularProgress, 
+    Alert, 
+    Stack,
+    Paper,
+    createTheme,
+    ThemeProvider,
+    CssBaseline
+} from "@mui/material";
+import SortIcon from '@mui/icons-material/Sort';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
+import GitHubIcon from '@mui/icons-material/GitHub';
 
 // 根据环境选择使用真实API还是模拟API
 const isDevEnvironment = import.meta.env.DEV;
@@ -41,6 +59,32 @@ enum SortMode {
 }
 
 function App() {
+    // 主题模式状态
+    const [darkMode, setDarkMode] = useState(() => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            return savedTheme === 'dark';
+        }
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    });
+    
+    // 创建Material UI主题
+    const theme = useMemo(
+        () =>
+            createTheme({
+                palette: {
+                    mode: darkMode ? 'dark' : 'light',
+                },
+            }),
+        [darkMode]
+    );
+    
+    // 切换主题的回调函数
+    const toggleTheme = () => {
+        setDarkMode(!darkMode);
+        localStorage.setItem('theme', !darkMode ? 'dark' : 'light');
+    };
+    
     const [groups, setGroups] = useState<GroupWithSites[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -51,13 +95,14 @@ function App() {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 5, // 5px 的移动才激活拖拽，防止误触
+                distance: 1, // 降低激活阈值，使拖拽更敏感
+                delay: 0, // 移除延迟
             },
         }),
         useSensor(TouchSensor, {
             activationConstraint: {
-                delay: 250, // 延迟250ms激活，防止误触
-                tolerance: 5, // 容忍5px的移动
+                delay: 100, // 降低触摸延迟
+                tolerance: 3, // 降低容忍值
             },
         }),
         useSensor(KeyboardSensor, {
@@ -71,6 +116,15 @@ function App() {
         setSortMode(SortMode.None);
         setCurrentSortingGroupId(null);
     }, []);
+
+    // 同步HTML的class以保持与现有CSS兼容
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [darkMode]);
 
     const fetchData = async () => {
         try {
@@ -221,113 +275,190 @@ function App() {
     };
 
     return (
-        <div className='min-h-screen bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300'>
-            <div className='container mx-auto w-5xl  relative px-4 sm:px-6 lg:px-8 py-10 sm:py-12'>
-                <div className='flex justify-between items-center mb-10'>
-                    <h1 className='text-4xl font-bold text-slate-900 dark:text-white'>导航站</h1>
-                    <div className='flex items-center gap-4 relative'>
-                        {sortMode !== SortMode.None ? (
-                            <>
-                                {sortMode === SortMode.GroupSort && (
-                                    <button
-                                        onClick={handleSaveGroupOrder}
-                                        className='px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors'
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Box 
+                sx={{ 
+                    minHeight: '100vh',
+                    bgcolor: 'background.default',
+                    color: 'text.primary',
+                    transition: 'all 0.3s ease-in-out'
+                }}
+            >
+                <Container 
+                    maxWidth="lg" 
+                    sx={{ 
+                        py: 4, 
+                        px: { xs: 2, sm: 3, md: 4 } 
+                    }}
+                >
+                    <Box 
+                        sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center',
+                            mb: 5
+                        }}
+                    >
+                        <Typography 
+                            variant="h3" 
+                            component="h1" 
+                            fontWeight="bold" 
+                            color="text.primary"
+                        >
+                            导航站
+                        </Typography>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                            {sortMode !== SortMode.None ? (
+                                <>
+                                    {sortMode === SortMode.GroupSort && (
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            startIcon={<SaveIcon />}
+                                            onClick={handleSaveGroupOrder}
+                                        >
+                                            保存分组顺序
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="outlined"
+                                        color="inherit"
+                                        startIcon={<CancelIcon />}
+                                        onClick={cancelSort}
                                     >
-                                        保存分组顺序
-                                    </button>
-                                )}
-                                <button
-                                    onClick={cancelSort}
-                                    className='px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors'
+                                        取消编辑
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    startIcon={<SortIcon />}
+                                    onClick={startGroupSort}
                                 >
-                                    取消编辑
-                                </button>
-                            </>
-                        ) : (
-                            <button
-                                onClick={startGroupSort}
-                                className='px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors'
-                            >
-                                编辑排序
-                            </button>
-                        )}
-                        <ThemeToggle />
-                    </div>
-                </div>
+                                    编辑排序
+                                </Button>
+                            )}
+                            <ThemeToggle darkMode={darkMode} onToggle={toggleTheme} />
+                        </Stack>
+                    </Box>
 
-                {loading && (
-                    <div className='flex justify-center items-center h-64'>
-                        <div className='animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500'></div>
-                    </div>
-                )}
+                    {loading && (
+                        <Box 
+                            sx={{ 
+                                display: 'flex', 
+                                justifyContent: 'center', 
+                                alignItems: 'center', 
+                                height: '200px' 
+                            }}
+                        >
+                            <CircularProgress size={60} thickness={4} />
+                        </Box>
+                    )}
 
-                {error && (
-                    <div
-                        className='bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg relative mb-8'
-                        role='alert'
-                    >
-                        <strong className='font-bold'>错误!</strong>
-                        <span className='block sm:inline ml-2'>{error}</span>
-                    </div>
-                )}
+                    {error && (
+                        <Alert 
+                            severity="error" 
+                            variant="outlined"
+                            sx={{ mb: 4 }}
+                        >
+                            <Typography fontWeight="bold" component="span">错误! </Typography>
+                            {error}
+                        </Alert>
+                    )}
 
-                {!loading && !error && (
-                    <div className='space-y-10 w-full duration-0' style={{ minHeight: "100px" }}>
-                        {sortMode === SortMode.GroupSort ? (
-                            <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragEnd={handleDragEnd}
-                            >
-                                <SortableContext
-                                    items={groups.map(group => group.id.toString())}
-                                    strategy={verticalListSortingStrategy}
+                    {!loading && !error && (
+                        <Box 
+                            sx={{ 
+                                '& > *': { mb: 5 },
+                                minHeight: '100px'
+                            }}
+                        >
+                            {sortMode === SortMode.GroupSort ? (
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
                                 >
-                                    <div className='space-y-4 duration-0'>
-                                        {groups.map(group => (
-                                            <SortableGroupItem
-                                                key={group.id}
-                                                id={group.id.toString()}
-                                                group={group}
-                                            />
-                                        ))}
-                                    </div>
-                                </SortableContext>
-                            </DndContext>
-                        ) : (
-                            <>
-                                {groups.map(group => (
-                                    <GroupCard
-                                        key={`group-${group.id}`}
-                                        group={group}
-                                        sortMode={sortMode === SortMode.None ? "None" : "SiteSort"}
-                                        currentSortingGroupId={currentSortingGroupId}
-                                        onUpdate={handleSiteUpdate}
-                                        onDelete={handleSiteDelete}
-                                        onSaveSiteOrder={handleSaveSiteOrder}
-                                        onStartSiteSort={startSiteSort}
-                                    />
-                                ))}
-                            </>
-                        )}
-                    </div>
-                )}
+                                    <SortableContext
+                                        items={groups.map(group => group.id.toString())}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        <Stack 
+                                            spacing={2} 
+                                            sx={{ 
+                                                '& > *': { 
+                                                    transition: 'none'
+                                                }
+                                            }}
+                                        >
+                                            {groups.map(group => (
+                                                <SortableGroupItem
+                                                    key={group.id}
+                                                    id={group.id.toString()}
+                                                    group={group}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </SortableContext>
+                                </DndContext>
+                            ) : (
+                                <Stack spacing={5}>
+                                    {groups.map(group => (
+                                        <GroupCard
+                                            key={`group-${group.id}`}
+                                            group={group}
+                                            sortMode={sortMode === SortMode.None ? "None" : "SiteSort"}
+                                            currentSortingGroupId={currentSortingGroupId}
+                                            onUpdate={handleSiteUpdate}
+                                            onDelete={handleSiteDelete}
+                                            onSaveSiteOrder={handleSaveSiteOrder}
+                                            onStartSiteSort={startSiteSort}
+                                        />
+                                    ))}
+                                </Stack>
+                            )}
+                        </Box>
+                    )}
 
-                {/* GitHub角标 - 样式微调 */}
-                <div className='fixed bottom-4 right-4 z-10'>
-                    <a
-                        href='https://github.com/zqq-nuli/Navihive'
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='flex items-center bg-white dark:bg-slate-800 p-2 rounded-full shadow-md hover:shadow-lg transition-shadow text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                        aria-label='View source on GitHub'
+                    {/* GitHub角标 */}
+                    <Box 
+                        sx={{ 
+                            position: 'fixed', 
+                            bottom: 16, 
+                            right: 16, 
+                            zIndex: 10 
+                        }}
                     >
-                        <img src='/svg/github.svg' className='w-6 h-6' alt='GitHub' />
-                        {/* <span className="text-sm font-medium ml-2 hidden sm:inline">GitHub</span> */}
-                    </a>
-                </div>
-            </div>
-        </div>
+                        <Paper
+                            component="a"
+                            href="https://github.com/zqq-nuli/Navihive"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            elevation={2}
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                p: 1,
+                                borderRadius: 10,
+                                bgcolor: 'background.paper',
+                                color: 'text.secondary',
+                                transition: 'all 0.3s ease-in-out',
+                                '&:hover': {
+                                    bgcolor: 'action.hover',
+                                    color: 'text.primary',
+                                    boxShadow: 4
+                                },
+                                textDecoration: 'none'
+                            }}
+                        >
+                            <GitHubIcon />
+                        </Paper>
+                    </Box>
+                </Container>
+            </Box>
+        </ThemeProvider>
     );
 }
 
