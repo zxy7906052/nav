@@ -13,8 +13,12 @@ binding = "DB"
 database_name = "navigation-db-local"
 database_id = "43ff28e1-42d6-4e53-9657-0702ae1353b6"
 
+# 默认为开发环境配置
+# 注意: 在生产环境中，请使用 Cloudflare Dashboard 或 CI/CD 设置这些环境变量
+# 不要在代码仓库中存储真实的凭证
 [vars]
 AUTH_ENABLED = "true"
-AUTH_USERNAME = "admin"
-AUTH_PASSWORD = "password"
-AUTH_SECRET = "your-secret-key"
+# 以下凭证仅用于开发环境，生产环境请替换为强密码
+# AUTH_USERNAME = "请在环境变量中设置"
+# AUTH_PASSWORD = "请在环境变量中设置"
+# AUTH_SECRET = "请在环境变量中设置"
