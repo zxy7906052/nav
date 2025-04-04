@@ -15,6 +15,13 @@ const mockGroups: Group[] = [
         order_num: 2,
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z"
+    },
+    {
+        id: 3,
+        name: "开发资源",
+        order_num: 3,
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z"
     }
 ];
 
