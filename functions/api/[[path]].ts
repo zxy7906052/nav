@@ -24,8 +24,17 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
             const result = await api.login(loginData);
             return Response.json(result);
         }
+        
+        // 初始化数据库接口 - 不需要验证
+        if (path === "init" && method === "GET") {
+            const initResult = await api.initDB();
+            if (initResult.alreadyInitialized) {
+                return new Response("数据库已经初始化过，无需重复初始化", { status: 200 });
+            }
+            return new Response("数据库初始化成功", { status: 200 });
+        }
 
-        // 验证中间件 - 除登录接口外，所有请求都需要验证
+        // 验证中间件 - 除登录接口和初始化接口外，所有请求都需要验证
         if (api.isAuthEnabled()) {
             // 检查Authorization头部
             const authHeader = request.headers.get("Authorization");
