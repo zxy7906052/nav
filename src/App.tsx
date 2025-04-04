@@ -139,7 +139,9 @@ function App() {
 
     // 处理拖拽结束
     const handleDragEnd = (result: DropResult) => {
+        // 立即设置拖拽状态为false，避免UI卡顿
         setIsDragging(false);
+        
         const { destination, source } = result;
         
         // 如果没有目标位置或没有移动，直接返回
@@ -152,6 +154,7 @@ function App() {
             const newGroups = Array.from(groups);
             const [movedGroup] = newGroups.splice(source.index, 1);
             newGroups.splice(destination.index, 0, movedGroup);
+            
             setGroups(newGroups);
             return;
         }
@@ -201,12 +204,13 @@ function App() {
     // 渲染分组卡片 - 提取为单独函数以避免在拖拽过程中重新渲染
     const renderGroup = (group: GroupWithSites, index: number) => (
         <Draggable key={`group-${group.id}`} draggableId={`group-${group.id}`} index={index}>
-            {(provided) => (
+            {(provided, snapshot) => (
                 <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
-                    className="bg-white dark:bg-slate-800/50 rounded-xl shadow-lg border border-transparent dark:border-slate-700/50 p-6 transition duration-300 ease-in-out hover:border-slate-300 dark:hover:border-slate-600 cursor-grab"
+                    className={`group-draggable-item bg-white dark:bg-slate-800/50 rounded-xl shadow-lg border border-transparent dark:border-slate-700/50 p-6 transition hover:border-slate-300 dark:hover:border-slate-600 cursor-grab ${snapshot.isDragging ? 'group-dragging' : ''}`}
+                    style={provided.draggableProps.style}
                 >
                     <div className="flex items-center">
                         <img src="/svg/up-down-arrows.svg" className="w-6 h-6 mr-3 text-slate-400" alt="上下拖拽箭头" />
@@ -228,26 +232,43 @@ function App() {
             return null;
         }
 
+        const sites = group.sites;
+
+        // 在拖拽模式下使用Droppable，否则直接渲染
+        if (!isCurrentEditingGroup) {
+            return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+                    {sites.map((site) => (
+                        <SiteCard
+                            key={site.id}
+                            site={site}
+                            onUpdate={handleSiteUpdate}
+                            onDelete={handleSiteDelete}
+                            isEditMode={false}
+                        />
+                    ))}
+                </div>
+            );
+        }
+
         return (
             <Droppable 
                 droppableId={`group-${group.id}`} 
                 direction="horizontal"
-                isDropDisabled={!isCurrentEditingGroup}
-                isCombineEnabled={false}
             >
                 {(provided) => (
                     <div 
-                        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5"
+                        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-0"
                         ref={provided.innerRef}
                         {...provided.droppableProps}
                     >
-                        {group.sites.map((site, index) => (
+                        {sites.map((site, index) => (
                             <SiteCard
                                 key={site.id}
                                 site={site}
                                 onUpdate={handleSiteUpdate}
                                 onDelete={handleSiteDelete}
-                                isEditMode={isCurrentEditingGroup}
+                                isEditMode={true}
                                 index={index}
                             />
                         ))}
@@ -322,7 +343,7 @@ function App() {
                                 >
                                     {(provided) => (
                                         <div
-                                            className="space-y-6"
+                                            className="space-y-6 groups-container groups-droppable"
                                             ref={provided.innerRef}
                                             {...provided.droppableProps}
                                         >
@@ -338,8 +359,8 @@ function App() {
                                         <div
                                             key={group.id}
                                             className={`bg-white dark:bg-slate-800/50 rounded-xl shadow-lg border border-transparent dark:border-slate-700/50 p-6 transition duration-300 ease-in-out ${
-                                                sortMode === SortMode.None ? 'hover:shadow-xl hover:scale-[1.01]' : ''
-                                            } hover:border-slate-300 dark:hover:border-slate-600`}
+                                                sortMode === SortMode.None ? 'hover:shadow-xl hover:scale-[1.01] hover:border-slate-300 dark:hover:border-slate-600' : 'hover:border-slate-300 dark:hover:border-slate-600'
+                                            }`}
                                         >
                                             <div className="flex justify-between items-center mb-5">
                                                 <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">

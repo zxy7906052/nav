@@ -1,0 +1,65 @@
+/* 在排序模式下的样式 */
+.gap-0 {
+  margin: 0;
+  padding: 0;
+}
+
+/* 确保占位符元素有正确的行为 */
+[data-rbd-placeholder-context-id] {
+  transition: none !important;
+  opacity: 0.3;
+  min-height: 8rem;
+  min-width: 200px;
+  margin: 0.25rem;
+}
+
+/* 修复占位符样式 */
+[data-rbd-drag-placeholder-context-id] {
+  opacity: 0.3;
+  box-sizing: border-box;
+}
+
+/* 修复拖拽时的宽度问题 */
+.groups-container {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible; /* 确保拖拽元素不被裁剪 */
+  min-height: 20px; /* 确保容器始终有高度 */
+}
+
+/* 分组拖拽项固定宽度 */
+.group-draggable-item {
+  width: 100%;
+  box-sizing: border-box;
+  position: relative; /* 确保定位正确 */
+}
+
+/* 确保拖拽时元素保持完整可见 */
+.group-dragging {
+  box-sizing: border-box;
+  z-index: 9999; /* 确保拖拽元素位于顶层 */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 拖拽占位符宽度保持一致 */
+.groups-droppable [data-rbd-placeholder-context-id] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 100%;
+}
+
+/* 站点卡片拖拽状态 */
+[data-rbd-draggable-id^="site-"].rbd-dragging-draggable {
+  z-index: 9999;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* 修复拖拽目标区域样式 */
+[data-rbd-droppable-id] {
+  min-height: 30px;
+}
+
+/* 修复水平排列的Droppable */
+[data-rbd-droppable-id^="group-"] {
+  display: grid;
+}

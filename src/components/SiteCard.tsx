@@ -47,11 +47,12 @@ const SiteCard = memo(function SiteCard({ site, onUpdate, onDelete, isEditMode =
     // 卡片内容
     const cardContent = (
         <div
-            className={`relative group flex flex-col min-h-[8rem] p-4 rounded-xl transition-all duration-300 ease-in-out 
+            className={`relative group flex flex-col min-h-[8rem] p-4 rounded-xl transition duration-300 ease-in-out 
                        bg-white dark:bg-slate-800 shadow-lg hover:shadow-xl 
                        border border-slate-200 dark:border-slate-700/60 
                        hover:border-slate-300 dark:hover:border-slate-600 
-                       ${!isEditMode ? 'hover:-translate-y-1 cursor-pointer' : 'cursor-grab'}`}
+                       ${!isEditMode ? 'hover:-translate-y-1 cursor-pointer' : 'cursor-grab'} 
+                       ${isEditMode ? 'm-1' : ''}`}
             onClick={handleCardClick}
         >
             {/* 图标和名称 */}
@@ -134,13 +135,14 @@ const SiteCard = memo(function SiteCard({ site, onUpdate, onDelete, isEditMode =
     
     return (
         <>
-            <Draggable draggableId={draggableId} index={index}>
-                {(provided) => (
+            <Draggable draggableId={draggableId} index={index} isDragDisabled={!isEditMode}>
+                {(provided, snapshot) => (
                     <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className="transition-transform"
+                        className={snapshot.isDragging ? 'rbd-dragging-draggable' : ''}
+                        style={provided.draggableProps.style}
                     >
                         {cardContent}
                     </div>
