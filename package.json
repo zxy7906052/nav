@@ -12,8 +12,6 @@
         "cf-typegen": "wrangler types"
     },
     "dependencies": {
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
         "@cfworker/jwt": "^7.0.4",
         "@cloudflare/workers-types": "^4.20250404.0",
         "@dnd-kit/core": "^6.3.1",
@@ -25,9 +23,9 @@
         "@mui/icons-material": "^7.0.1",
         "@mui/material": "^7.0.1",
         "@tailwindcss/vite": "^4.1.2",
-        "@types/jsonwebtoken": "^9.0.9",
         "dnd-kit": "^0.0.2",
-        "jsonwebtoken": "^9.0.2",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
         "tailwindcss": "^4.1.2"
     },
     "devDependencies": {
@@ -37,17 +35,17 @@
         "@types/react": "^19.0.10",
         "@types/react-dom": "^19.0.4",
         "@vitejs/plugin-react": "^4.3.4",
+        "child_process": "^1.0.2",
+        "esbuild": "^0.25.2",
         "eslint": "^9.21.0",
         "eslint-plugin-react-hooks": "^5.1.0",
         "eslint-plugin-react-refresh": "^0.4.19",
+        "fs": "0.0.1-security",
         "globals": "^15.15.0",
+        "path": "^0.12.7",
         "typescript": "~5.7.2",
         "typescript-eslint": "^8.24.1",
         "vite": "^6.2.0",
-        "wrangler": "^4.7.2",
-        "child_process": "^1.0.2",
-        "esbuild": "^0.25.2",
-        "fs": "0.0.1-security",
-        "path": "^0.12.7"
+        "wrangler": "^4.7.2"
     }
 }
