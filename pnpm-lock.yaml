@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@cfworker/jwt':
+        specifier: ^7.0.4
+        version: 7.0.4
       '@cloudflare/workers-types':
         specifier: ^4.20250404.0
         version: 4.20250404.0
@@ -44,9 +47,6 @@ importers:
       dnd-kit:
         specifier: ^0.0.2
         version: 0.0.2
-      jose:
-        specifier: ^6.0.10
-        version: 6.0.10
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -194,6 +194,9 @@ packages:
   '@babel/types@7.27.0':
     resolution: {integrity: sha512-H45s8fVLYjbhFH62dIJ3WtmJ6RSPt/3DRO0ZcT2SUiYiQyz3BLVb9ADEnLl91m74aQPS3AzzeajZHYOalWe3bg==}
     engines: {node: '>=6.9.0'}
+
+  '@cfworker/jwt@7.0.4':
+    resolution: {integrity: sha512-XLLETI5GZODme9fFCAuIPfza1/c9qkcC41GtnJejhJCik2+X0sbHG+8JbLCuMFT0tqOTFsmdCeqBrsPLmn00+Q==}
 
   '@cloudflare/workers-types@4.20250404.0':
     resolution: {integrity: sha512-XB8LNS9spWcxU56Tt/RPl0S06oyXfZCSDVKBbzjHYZtgN5kZP4UtTR01t16HUfo330EtJOo8cdo/PbiBAwRNIg==}
@@ -1213,9 +1216,6 @@ packages:
     resolution: {integrity: sha512-rg9zJN+G4n2nfJl5MW3BMygZX56zKPNVEYYqq7adpmMh4Jn2QNEwhvQlFy6jPVdcod7txZtKHWnyZiA3a0zP7A==}
     hasBin: true
 
-  jose@6.0.10:
-    resolution: {integrity: sha512-skIAxZqcMkOrSwjJvplIPYrlXGpxTPnro2/QWTDCxAdWQrSTV5/KqspMWmi5WAx5+ULswASJiZ0a+1B/Lxt9cw==}
-
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -1505,6 +1505,9 @@ packages:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
 
+  rfc4648@1.5.4:
+    resolution: {integrity: sha512-rRg/6Lb+IGfJqO05HZkN50UtY7K/JhxJag1kP23+zyMfrvoB0B7RWv06MbOzoc79RgCdNTiUaNsTT1AJZ7Z+cg==}
+
   rollup@4.39.0:
     resolution: {integrity: sha512-thI8kNc02yNvnmJp8dr3fNWJ9tCONDhp6TV35X6HkKGGs9E6q7YWCHbe5vKiTa7TAiNcFEmXKj3X/pG2b3ci0g==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
@@ -1790,6 +1793,10 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.25.9
       '@babel/helper-validator-identifier': 7.25.9
+
+  '@cfworker/jwt@7.0.4':
+    dependencies:
+      rfc4648: 1.5.4
 
   '@cloudflare/workers-types@4.20250404.0': {}
 
@@ -2753,8 +2760,6 @@ snapshots:
 
   jiti@2.4.2: {}
 
-  jose@6.0.10: {}
-
   js-tokens@4.0.0: {}
 
   js-yaml@4.1.0:
@@ -3004,6 +3009,8 @@ snapshots:
       supports-preserve-symlinks-flag: 1.0.0
 
   reusify@1.1.0: {}
+
+  rfc4648@1.5.4: {}
 
   rollup@4.39.0:
     dependencies:
