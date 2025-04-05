@@ -113,8 +113,8 @@ NaviHive 是一个精美的网站导航管理系统，帮助你整理和管理�
 
    ![数据库管理界面](https://img.zhengmi.org/file/1743843332374_image.png)
 
-   - 在数据库管理界面，点击"查询"选项卡进入SQL编辑器
-   - 在SQL编辑器中，复制并粘贴以下SQL命令：
+   - 在数据库管理界面，点击"控制台"选项卡进入SQL编辑器
+   - 在SQL编辑器中，逐个复制并粘贴以下SQL命令：
 
    ```sql
    -- 创建分组表
@@ -260,7 +260,7 @@ pnpm deploy
 
 如一键部署方法中的步骤5所述，通过Cloudflare控制台执行SQL命令初始化数据库。
 
-#### 方式二：通过API初始化
+#### 方式二：通过API初始化(弃用)
 
 1. 访问`https://您的网站地址/init`
 2. 如果看到"数据库初始化成功"的消息，说明初始化成功
@@ -323,7 +323,6 @@ A: NaviHive 使用两个主要表格：
 ├── worker/               # Cloudflare Workers函数
 │   └── index.ts          # Workers入口文件
 ├── public/               # 静态资源
-│   └── svg/              # SVG图标
 ├── src/                  # 前端源码
 │   ├── API/              # API客户端
 │   ├── components/       # React组件
@@ -346,7 +345,7 @@ A: NaviHive 使用两个主要表格：
 
 ## 📄 许可证
 
-此项目采用 Apache License 2.0 许可证 - 详情见 [LICENSE](LICENSE) 文件
+此项目采用 MIT License 许可证 - 详情见 [LICENSE](LICENSE) 文件
 
 ## 🙏 鸣谢
 
@@ -358,6 +357,7 @@ A: NaviHive 使用两个主要表格：
 -   [Tailwind CSS](https://tailwindcss.com/)
 -   [TypeScript](https://www.typescriptlang.org/)
 -   [Cloudflare D1](https://developers.cloudflare.com/d1/)
+-   [Curosr](https://www.cursor.com)
 
 ---
 
