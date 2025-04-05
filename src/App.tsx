@@ -49,6 +49,7 @@ import {
     Divider,
     ListItemIcon,
     ListItemText,
+    Snackbar,
 } from "@mui/material";
 import SortIcon from "@mui/icons-material/Sort";
 import SaveIcon from "@mui/icons-material/Save";
@@ -173,6 +174,10 @@ function App() {
     const [importError, setImportError] = useState<string | null>(null);
     const [importLoading, setImportLoading] = useState(false);
 
+    // 错误提示框状态
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
+
     // 菜单打开关闭
     const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
         setMenuAnchorEl(event.currentTarget);
@@ -229,31 +234,37 @@ function App() {
         }
     };
 
-    // 处理登录
+    // 登录功能
     const handleLogin = async (username: string, password: string) => {
         try {
             setLoginLoading(true);
             setLoginError(null);
 
-            const result = await api.login(username, password);
+            // 调用登录接口
+            const success = await api.login(username, password);
 
-            if (result.success) {
+            if (success) {
+                // 登录成功
                 setIsAuthenticated(true);
-                // 登录成功后加载数据
+                setIsAuthRequired(false);
+                // 加载数据
                 await fetchData();
                 await fetchConfigs();
             } else {
-                setLoginError(result.message || "登录失败");
+                // 登录失败
+                handleError("用户名或密码错误");
+                setIsAuthenticated(false);
             }
         } catch (error) {
             console.error("登录失败:", error);
-            setLoginError("登录请求失败: " + (error instanceof Error ? error.message : "未知错误"));
+            handleError("登录失败: " + (error instanceof Error ? error.message : "未知错误"));
+            setIsAuthenticated(false);
         } finally {
             setLoginLoading(false);
         }
     };
 
-    // 处理登出
+    // 登出功能
     const handleLogout = () => {
         api.logout();
         setIsAuthenticated(false);
@@ -344,6 +355,18 @@ function App() {
         }
     }, [darkMode]);
 
+    // 处理错误的函数
+    const handleError = (errorMessage: string) => {
+        setSnackbarMessage(errorMessage);
+        setSnackbarOpen(true);
+        console.error(errorMessage);
+    };
+
+    // 关闭错误提示框
+    const handleCloseSnackbar = () => {
+        setSnackbarOpen(false);
+    };
+
     const fetchData = async () => {
         try {
             setLoading(true);
@@ -367,7 +390,7 @@ function App() {
             setGroups(groupsWithSites);
         } catch (error) {
             console.error("加载数据失败:", error);
-            setError("加载数据失败: " + (error instanceof Error ? error.message : "未知错误"));
+            handleError("加载数据失败: " + (error instanceof Error ? error.message : "未知错误"));
 
             // 如果因为认证问题导致加载失败，处理认证状态
             if (error instanceof Error && error.message.includes("认证")) {
@@ -388,7 +411,7 @@ function App() {
             }
         } catch (error) {
             console.error("更新站点失败:", error);
-            setError("更新站点失败: " + (error as Error).message);
+            handleError("更新站点失败: " + (error as Error).message);
         }
     };
 
@@ -399,7 +422,7 @@ function App() {
             await fetchData(); // 重新加载数据
         } catch (error) {
             console.error("删除站点失败:", error);
-            setError("删除站点失败: " + (error as Error).message);
+            handleError("删除站点失败: " + (error as Error).message);
         }
     };
 
@@ -428,7 +451,7 @@ function App() {
             setCurrentSortingGroupId(null);
         } catch (error) {
             console.error("更新分组排序失败:", error);
-            setError("更新分组排序失败: " + (error as Error).message);
+            handleError("更新分组排序失败: " + (error as Error).message);
         }
     };
 
@@ -458,7 +481,7 @@ function App() {
             setCurrentSortingGroupId(null);
         } catch (error) {
             console.error("更新站点排序失败:", error);
-            setError("更新站点排序失败: " + (error as Error).message);
+            handleError("更新站点排序失败: " + (error as Error).message);
         }
     };
 
@@ -518,16 +541,17 @@ function App() {
     const handleCreateGroup = async () => {
         try {
             if (!newGroup.name) {
-                setError("分组名称不能为空");
+                handleError("分组名称不能为空");
                 return;
             }
 
             await api.createGroup(newGroup as Group);
             await fetchData(); // 重新加载数据
             handleCloseAddGroup();
+            setNewGroup({ name: "", order_num: 0 }); // 重置表单
         } catch (error) {
             console.error("创建分组失败:", error);
-            setError("创建分组失败: " + (error as Error).message);
+            handleError("创建分组失败: " + (error as Error).message);
         }
     };
 
@@ -565,7 +589,7 @@ function App() {
     const handleCreateSite = async () => {
         try {
             if (!newSite.name || !newSite.url) {
-                setError("站点名称和URL不能为空");
+                handleError("站点名称和URL不能为空");
                 return;
             }
 
@@ -574,7 +598,7 @@ function App() {
             handleCloseAddSite();
         } catch (error) {
             console.error("创建站点失败:", error);
-            setError("创建站点失败: " + (error as Error).message);
+            handleError("创建站点失败: " + (error as Error).message);
         }
     };
 
@@ -609,7 +633,7 @@ function App() {
             handleCloseConfig();
         } catch (error) {
             console.error("保存配置失败:", error);
-            setError("保存配置失败: " + (error as Error).message);
+            handleError("保存配置失败: " + (error as Error).message);
         }
     };
 
@@ -617,27 +641,29 @@ function App() {
     const handleExportData = async () => {
         try {
             setLoading(true);
-            handleMenuClose();
+            const exportData = {
+                groups: groups.map(group => ({
+                    id: group.id,
+                    name: group.name,
+                    order_num: group.order_num,
+                    sites: group.sites,
+                })),
+                configs: configs,
+            };
 
-            const data = await api.exportData();
+            // 创建并下载JSON文件
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
 
-            // 创建Blob对象
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const exportFileName = `导航站备份_${new Date().toISOString().slice(0, 10)}.json`;
 
-            // 创建下载链接
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `navigation-data-${new Date().toISOString().slice(0, 10)}.json`;
-
-            // 触发下载并清理
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            const linkElement = document.createElement("a");
+            linkElement.setAttribute("href", dataUri);
+            linkElement.setAttribute("download", exportFileName);
+            linkElement.click();
         } catch (error) {
             console.error("导出数据失败:", error);
-            setError("导出数据失败: " + (error instanceof Error ? error.message : "未知错误"));
+            handleError("导出数据失败: " + (error instanceof Error ? error.message : "未知错误"));
         } finally {
             setLoading(false);
         }
@@ -666,7 +692,7 @@ function App() {
     // 处理导入数据
     const handleImportData = async () => {
         if (!importFile) {
-            setImportError("请选择要导入的文件");
+            handleError("请选择要导入的文件");
             return;
         }
 
@@ -674,32 +700,71 @@ function App() {
             setImportLoading(true);
             setImportError(null);
 
-            // 读取文件内容
-            const fileContent = await importFile.text();
-            const data = JSON.parse(fileContent);
+            const fileReader = new FileReader();
+            fileReader.readAsText(importFile, "UTF-8");
 
-            // 验证数据格式
-            if (!data.groups || !data.sites || !data.configs) {
-                throw new Error("导入的文件格式不正确");
-            }
+            fileReader.onload = async e => {
+                try {
+                    if (!e.target?.result) {
+                        throw new Error("读取文件失败");
+                    }
 
-            // 导入数据
-            const result = await api.importData(data);
+                    const importData = JSON.parse(e.target.result as string);
 
-            if (result) {
-                // 关闭对话框
-                handleCloseImport();
-                // 重新加载数据
-                await fetchData();
-                await fetchConfigs();
-            } else {
-                throw new Error("导入失败");
-            }
+                    // 验证导入数据格式
+                    if (!importData.groups || !Array.isArray(importData.groups)) {
+                        throw new Error("导入文件格式错误：缺少分组数据");
+                    }
+
+                    // 导入分组和站点
+                    // 这里简化处理，实际应用中可能需要更复杂的导入逻辑
+                    for (const group of importData.groups) {
+                        // 创建分组
+                        const createdGroup = await api.createGroup({
+                            name: group.name,
+                            order_num: group.order_num,
+                        } as Group);
+
+                        // 创建站点
+                        if (group.sites && Array.isArray(group.sites)) {
+                            for (const site of group.sites) {
+                                await api.createSite({
+                                    ...site,
+                                    group_id: createdGroup.id,
+                                    id: undefined, // 不传入id，让数据库自动生成新id
+                                } as Site);
+                            }
+                        }
+                    }
+
+                    // 导入配置
+                    if (importData.configs) {
+                        for (const [key, value] of Object.entries(importData.configs)) {
+                            await api.setConfig(key, value as string);
+                        }
+                    }
+
+                    // 刷新数据
+                    await fetchData();
+                    await fetchConfigs();
+                    handleCloseImport();
+                } catch (error) {
+                    console.error("解析导入数据失败:", error);
+                    handleError(
+                        "解析导入数据失败: " + (error instanceof Error ? error.message : "未知错误")
+                    );
+                } finally {
+                    setImportLoading(false);
+                }
+            };
+
+            fileReader.onerror = () => {
+                handleError("读取文件失败");
+                setImportLoading(false);
+            };
         } catch (error) {
             console.error("导入数据失败:", error);
-            setImportError(
-                "导入数据失败: " + (error instanceof Error ? error.message : "未知错误")
-            );
+            handleError("导入数据失败: " + (error instanceof Error ? error.message : "未知错误"));
         } finally {
             setImportLoading(false);
         }
@@ -755,6 +820,24 @@ function App() {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
+
+            {/* 错误提示 Snackbar */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+                <Alert
+                    onClose={handleCloseSnackbar}
+                    severity='error'
+                    variant='filled'
+                    sx={{ width: "100%" }}
+                >
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
+
             <Box
                 sx={{
                     minHeight: "100vh",
@@ -896,15 +979,6 @@ function App() {
                         >
                             <CircularProgress size={60} thickness={4} />
                         </Box>
-                    )}
-
-                    {error && (
-                        <Alert severity='error' variant='outlined' sx={{ mb: 4 }}>
-                            <Typography fontWeight='bold' component='span'>
-                                错误!{" "}
-                            </Typography>
-                            {error}
-                        </Alert>
                     )}
 
                     {!loading && !error && (
