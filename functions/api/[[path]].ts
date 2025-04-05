@@ -1,9 +1,8 @@
 import { NavigationAPI } from "../../src/API/http";
 import type { LoginRequest, ExportData, Group, Site } from "../../src/API/http";
-import { D1Database } from "@cloudflare/workers-types";
 
 interface Env {
-    DB: D1Database;
+    DB: any;
     AUTH_ENABLED?: string;
     AUTH_USERNAME?: string;
     AUTH_PASSWORD?: string;
@@ -38,126 +37,136 @@ interface ConfigInput {
 // 输入验证函数
 function validateLogin(data: LoginInput): { valid: boolean; errors?: string[] } {
     const errors: string[] = [];
-    
-    if (!data.username || typeof data.username !== 'string') {
-        errors.push('用户名不能为空且必须是字符串');
+
+    if (!data.username || typeof data.username !== "string") {
+        errors.push("用户名不能为空且必须是字符串");
     }
-    
-    if (!data.password || typeof data.password !== 'string') {
-        errors.push('密码不能为空且必须是字符串');
+
+    if (!data.password || typeof data.password !== "string") {
+        errors.push("密码不能为空且必须是字符串");
     }
-    
+
     return { valid: errors.length === 0, errors };
 }
 
-function validateGroup(data: GroupInput): { valid: boolean; errors?: string[]; sanitizedData?: Group } {
+function validateGroup(data: GroupInput): {
+    valid: boolean;
+    errors?: string[];
+    sanitizedData?: Group;
+} {
     const errors: string[] = [];
     const sanitizedData: Partial<Group> = {};
-    
+
     // 验证名称
-    if (!data.name || typeof data.name !== 'string') {
-        errors.push('分组名称不能为空且必须是字符串');
+    if (!data.name || typeof data.name !== "string") {
+        errors.push("分组名称不能为空且必须是字符串");
     } else {
         sanitizedData.name = data.name.trim().slice(0, 100); // 限制长度
     }
-    
+
     // 验证排序号
-    if (data.order_num === undefined || typeof data.order_num !== 'number') {
-        errors.push('排序号必须是数字');
+    if (data.order_num === undefined || typeof data.order_num !== "number") {
+        errors.push("排序号必须是数字");
     } else {
         sanitizedData.order_num = data.order_num;
     }
-    
-    return { 
-        valid: errors.length === 0, 
-        errors, 
-        sanitizedData: errors.length === 0 ? sanitizedData as Group : undefined 
+
+    return {
+        valid: errors.length === 0,
+        errors,
+        sanitizedData: errors.length === 0 ? (sanitizedData as Group) : undefined,
     };
 }
 
-function validateSite(data: SiteInput): { valid: boolean; errors?: string[]; sanitizedData?: Site } {
+function validateSite(data: SiteInput): {
+    valid: boolean;
+    errors?: string[];
+    sanitizedData?: Site;
+} {
     const errors: string[] = [];
     const sanitizedData: Partial<Site> = {};
-    
+
     // 验证分组ID
-    if (!data.group_id || typeof data.group_id !== 'number') {
-        errors.push('分组ID必须是数字且不能为空');
+    if (!data.group_id || typeof data.group_id !== "number") {
+        errors.push("分组ID必须是数字且不能为空");
     } else {
         sanitizedData.group_id = data.group_id;
     }
-    
+
     // 验证名称
-    if (!data.name || typeof data.name !== 'string') {
-        errors.push('站点名称不能为空且必须是字符串');
+    if (!data.name || typeof data.name !== "string") {
+        errors.push("站点名称不能为空且必须是字符串");
     } else {
         sanitizedData.name = data.name.trim().slice(0, 100); // 限制长度
     }
-    
+
     // 验证URL
-    if (!data.url || typeof data.url !== 'string') {
-        errors.push('URL不能为空且必须是字符串');
+    if (!data.url || typeof data.url !== "string") {
+        errors.push("URL不能为空且必须是字符串");
     } else {
         try {
             // 验证URL格式
             new URL(data.url);
             sanitizedData.url = data.url.trim();
         } catch {
-            errors.push('无效的URL格式');
+            errors.push("无效的URL格式");
         }
     }
-    
+
     // 验证图标URL (可选)
     if (data.icon !== undefined) {
-        if (typeof data.icon !== 'string') {
-            errors.push('图标URL必须是字符串');
+        if (typeof data.icon !== "string") {
+            errors.push("图标URL必须是字符串");
         } else if (data.icon) {
             try {
                 // 验证URL格式
                 new URL(data.icon);
                 sanitizedData.icon = data.icon.trim();
             } catch {
-                errors.push('无效的图标URL格式');
+                errors.push("无效的图标URL格式");
             }
         } else {
-            sanitizedData.icon = '';
+            sanitizedData.icon = "";
         }
     }
-    
+
     // 验证描述 (可选)
     if (data.description !== undefined) {
-        sanitizedData.description = typeof data.description === 'string' 
-            ? data.description.trim().slice(0, 500) // 限制长度
-            : '';
+        sanitizedData.description =
+            typeof data.description === "string"
+                ? data.description.trim().slice(0, 500) // 限制长度
+                : "";
     }
-    
+
     // 验证备注 (可选)
     if (data.notes !== undefined) {
-        sanitizedData.notes = typeof data.notes === 'string'
-            ? data.notes.trim().slice(0, 1000) // 限制长度
-            : '';
+        sanitizedData.notes =
+            typeof data.notes === "string"
+                ? data.notes.trim().slice(0, 1000) // 限制长度
+                : "";
     }
-    
+
     // 验证排序号
-    if (data.order_num === undefined || typeof data.order_num !== 'number') {
-        errors.push('排序号必须是数字');
+    if (data.order_num === undefined || typeof data.order_num !== "number") {
+        errors.push("排序号必须是数字");
     } else {
         sanitizedData.order_num = data.order_num;
     }
-    
-    return { 
-        valid: errors.length === 0, 
-        errors, 
-        sanitizedData: errors.length === 0 ? sanitizedData as Site : undefined 
+
+    return {
+        valid: errors.length === 0,
+        errors,
+        sanitizedData: errors.length === 0 ? (sanitizedData as Site) : undefined,
     };
 }
 
 function validateConfig(data: ConfigInput): { valid: boolean; errors?: string[] } {
     const errors: string[] = [];
-    
-    if (!data.value || typeof data.value !== 'string') {
-        errors.push('配置值不能为空且必须是字符串');
+
+    if (!data.value || typeof data.value !== "string") {
+        errors.push("配置值不能为空且必须是字符串");
     }
-    
+
     return { valid: errors.length === 0, errors };
 }
 
@@ -173,20 +182,23 @@ export default {
             // 登录路由 - 不需要验证
             if (path === "login" && method === "POST") {
                 const loginData = await request.json();
-                
+
                 // 验证登录数据
                 const validation = validateLogin(loginData);
                 if (!validation.valid) {
-                    return Response.json({
-                        success: false,
-                        message: `验证失败: ${validation.errors?.join(', ')}`
-                    }, { status: 400 });
+                    return Response.json(
+                        {
+                            success: false,
+                            message: `验证失败: ${validation.errors?.join(", ")}`,
+                        },
+                        { status: 400 }
+                    );
                 }
-                
+
                 const result = await api.login(loginData as LoginRequest);
                 return Response.json(result);
             }
-            
+
             // 初始化数据库接口 - 不需要验证
             if (path === "init" && method === "GET") {
                 const initResult = await api.initDB();
@@ -200,20 +212,20 @@ export default {
             if (api.isAuthEnabled()) {
                 // 检查Authorization头部
                 const authHeader = request.headers.get("Authorization");
-                
+
                 // 如果没有Authorization头部，返回401错误
                 if (!authHeader) {
-                    return new Response("请先登录", { 
+                    return new Response("请先登录", {
                         status: 401,
                         headers: {
-                            "WWW-Authenticate": "Bearer"
-                        }
+                            "WWW-Authenticate": "Bearer",
+                        },
                     });
                 }
 
                 // 提取Token
                 const [authType, token] = authHeader.split(" ");
-                
+
                 // 验证Token类型和内容
                 if (authType !== "Bearer" || !token) {
                     return new Response("无效的认证信息", { status: 401 });
@@ -239,16 +251,19 @@ export default {
                 return Response.json(group);
             } else if (path === "groups" && method === "POST") {
                 const data = await request.json();
-                
+
                 // 验证分组数据
                 const validation = validateGroup(data);
                 if (!validation.valid) {
-                    return Response.json({
-                        success: false,
-                        message: `验证失败: ${validation.errors?.join(', ')}`
-                    }, { status: 400 });
+                    return Response.json(
+                        {
+                            success: false,
+                            message: `验证失败: ${validation.errors?.join(", ")}`,
+                        },
+                        { status: 400 }
+                    );
                 }
-                
+
                 const result = await api.createGroup(validation.sanitizedData as Group);
                 return Response.json(result);
             } else if (path.startsWith("groups/") && method === "PUT") {
@@ -256,23 +271,32 @@ export default {
                 if (isNaN(id)) {
                     return Response.json({ error: "无效的ID" }, { status: 400 });
                 }
-                
+
                 const data = await request.json();
                 // 对修改的字段进行验证
-                if (data.name !== undefined && (typeof data.name !== 'string' || data.name.trim() === '')) {
-                    return Response.json({
-                        success: false,
-                        message: "分组名称不能为空且必须是字符串"
-                    }, { status: 400 });
+                if (
+                    data.name !== undefined &&
+                    (typeof data.name !== "string" || data.name.trim() === "")
+                ) {
+                    return Response.json(
+                        {
+                            success: false,
+                            message: "分组名称不能为空且必须是字符串",
+                        },
+                        { status: 400 }
+                    );
                 }
-                
-                if (data.order_num !== undefined && typeof data.order_num !== 'number') {
-                    return Response.json({
-                        success: false,
-                        message: "排序号必须是数字"
-                    }, { status: 400 });
+
+                if (data.order_num !== undefined && typeof data.order_num !== "number") {
+                    return Response.json(
+                        {
+                            success: false,
+                            message: "排序号必须是数字",
+                        },
+                        { status: 400 }
+                    );
                 }
-                
+
                 const result = await api.updateGroup(id, data);
                 return Response.json(result);
             } else if (path.startsWith("groups/") && method === "DELETE") {
@@ -280,7 +304,7 @@ export default {
                 if (isNaN(id)) {
                     return Response.json({ error: "无效的ID" }, { status: 400 });
                 }
-                
+
                 const result = await api.deleteGroup(id);
                 return Response.json({ success: result });
             }
@@ -294,21 +318,24 @@ export default {
                 if (isNaN(id)) {
                     return Response.json({ error: "无效的ID" }, { status: 400 });
                 }
-                
+
                 const site = await api.getSite(id);
                 return Response.json(site);
             } else if (path === "sites" && method === "POST") {
                 const data = await request.json();
-                
+
                 // 验证站点数据
                 const validation = validateSite(data);
                 if (!validation.valid) {
-                    return Response.json({
-                        success: false,
-                        message: `验证失败: ${validation.errors?.join(', ')}`
-                    }, { status: 400 });
+                    return Response.json(
+                        {
+                            success: false,
+                            message: `验证失败: ${validation.errors?.join(", ")}`,
+                        },
+                        { status: 400 }
+                    );
                 }
-                
+
                 const result = await api.createSite(validation.sanitizedData as Site);
                 return Response.json(result);
             } else if (path.startsWith("sites/") && method === "PUT") {
@@ -316,32 +343,38 @@ export default {
                 if (isNaN(id)) {
                     return Response.json({ error: "无效的ID" }, { status: 400 });
                 }
-                
+
                 const data = await request.json();
-                
+
                 // 验证更新的站点数据
                 if (data.url !== undefined) {
                     try {
                         new URL(data.url);
                     } catch {
-                        return Response.json({
-                            success: false,
-                            message: "无效的URL格式"
-                        }, { status: 400 });
+                        return Response.json(
+                            {
+                                success: false,
+                                message: "无效的URL格式",
+                            },
+                            { status: 400 }
+                        );
                     }
                 }
-                
-                if (data.icon !== undefined && data.icon !== '') {
+
+                if (data.icon !== undefined && data.icon !== "") {
                     try {
                         new URL(data.icon);
                     } catch {
-                        return Response.json({
-                            success: false,
-                            message: "无效的图标URL格式"
-                        }, { status: 400 });
+                        return Response.json(
+                            {
+                                success: false,
+                                message: "无效的图标URL格式",
+                            },
+                            { status: 400 }
+                        );
                     }
                 }
-                
+
                 const result = await api.updateSite(id, data);
                 return Response.json(result);
             } else if (path.startsWith("sites/") && method === "DELETE") {
@@ -349,55 +382,75 @@ export default {
                 if (isNaN(id)) {
                     return Response.json({ error: "无效的ID" }, { status: 400 });
                 }
-                
+
                 const result = await api.deleteSite(id);
                 return Response.json({ success: result });
             }
             // 批量更新排序
             else if (path === "group-orders" && method === "PUT") {
                 const data = await request.json();
-                
+
                 // 验证排序数据
                 if (!Array.isArray(data)) {
-                    return Response.json({
-                        success: false,
-                        message: "排序数据必须是数组"
-                    }, { status: 400 });
-                }
-                
-                for (const item of data) {
-                    if (!item.id || typeof item.id !== 'number' || 
-                        item.order_num === undefined || typeof item.order_num !== 'number') {
-                        return Response.json({
+                    return Response.json(
+                        {
                             success: false,
-                            message: "排序数据格式无效，每个项目必须包含id和order_num"
-                        }, { status: 400 });
+                            message: "排序数据必须是数组",
+                        },
+                        { status: 400 }
+                    );
+                }
+
+                for (const item of data) {
+                    if (
+                        !item.id ||
+                        typeof item.id !== "number" ||
+                        item.order_num === undefined ||
+                        typeof item.order_num !== "number"
+                    ) {
+                        return Response.json(
+                            {
+                                success: false,
+                                message: "排序数据格式无效，每个项目必须包含id和order_num",
+                            },
+                            { status: 400 }
+                        );
                     }
                 }
-                
+
                 const result = await api.updateGroupOrder(data);
                 return Response.json({ success: result });
             } else if (path === "site-orders" && method === "PUT") {
                 const data = await request.json();
-                
+
                 // 验证排序数据
                 if (!Array.isArray(data)) {
-                    return Response.json({
-                        success: false,
-                        message: "排序数据必须是数组"
-                    }, { status: 400 });
-                }
-                
-                for (const item of data) {
-                    if (!item.id || typeof item.id !== 'number' || 
-                        item.order_num === undefined || typeof item.order_num !== 'number') {
-                        return Response.json({
+                    return Response.json(
+                        {
                             success: false,
-                            message: "排序数据格式无效，每个项目必须包含id和order_num"
-                        }, { status: 400 });
+                            message: "排序数据必须是数组",
+                        },
+                        { status: 400 }
+                    );
+                }
+
+                for (const item of data) {
+                    if (
+                        !item.id ||
+                        typeof item.id !== "number" ||
+                        item.order_num === undefined ||
+                        typeof item.order_num !== "number"
+                    ) {
+                        return Response.json(
+                            {
+                                success: false,
+                                message: "排序数据格式无效，每个项目必须包含id和order_num",
+                            },
+                            { status: 400 }
+                        );
                     }
                 }
-                
+
                 const result = await api.updateSiteOrder(data);
                 return Response.json({ success: result });
             }
@@ -412,16 +465,19 @@ export default {
             } else if (path.startsWith("configs/") && method === "PUT") {
                 const key = path.substring("configs/".length);
                 const data = await request.json();
-                
+
                 // 验证配置数据
                 const validation = validateConfig(data);
                 if (!validation.valid) {
-                    return Response.json({
-                        success: false,
-                        message: `验证失败: ${validation.errors?.join(', ')}`
-                    }, { status: 400 });
+                    return Response.json(
+                        {
+                            success: false,
+                            message: `验证失败: ${validation.errors?.join(", ")}`,
+                        },
+                        { status: 400 }
+                    );
                 }
-                
+
                 const result = await api.setConfig(key, data.value);
                 return Response.json({ success: result });
             } else if (path.startsWith("configs/") && method === "DELETE") {
@@ -436,25 +492,33 @@ export default {
                 return Response.json(data, {
                     headers: {
                         "Content-Disposition": "attachment; filename=navhive-data.json",
-                        "Content-Type": "application/json"
-                    }
+                        "Content-Type": "application/json",
+                    },
                 });
             }
-            
+
             // 数据导入路由
             else if (path === "import" && method === "POST") {
                 const data = await request.json();
-                
+
                 // 验证导入数据
-                if (!data.groups || !Array.isArray(data.groups) ||
-                    !data.sites || !Array.isArray(data.sites) ||
-                    !data.configs || typeof data.configs !== 'object') {
-                    return Response.json({
-                        success: false,
-                        message: "导入数据格式无效"
-                    }, { status: 400 });
+                if (
+                    !data.groups ||
+                    !Array.isArray(data.groups) ||
+                    !data.sites ||
+                    !Array.isArray(data.sites) ||
+                    !data.configs ||
+                    typeof data.configs !== "object"
+                ) {
+                    return Response.json(
+                        {
+                            success: false,
+                            message: "导入数据格式无效",
+                        },
+                        { status: 400 }
+                    );
                 }
-                
+
                 const result = await api.importData(data as ExportData);
                 return Response.json({ success: result });
             }
@@ -463,8 +527,8 @@ export default {
             return new Response("Not Found", { status: 404 });
         } catch (error) {
             // 安全处理错误，不暴露内部细节
-            console.error(`API错误: ${error instanceof Error ? error.message : '未知错误'}`);
+            console.error(`API错误: ${error instanceof Error ? error.message : "未知错误"}`);
             return new Response(`处理请求时发生错误`, { status: 500 });
         }
-    }
+    },
 };

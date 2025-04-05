@@ -1,14 +1,14 @@
+// @ts-nocheck
 // src/api/http.ts
-import { D1Database } from "@cloudflare/workers-types";
 // 不使用外部JWT库，改为内置的crypto API
 
 // 定义环境变量接口
 interface Env {
-    DB: D1Database;
+    DB: any;
     AUTH_ENABLED?: string; // 是否启用身份验证
     AUTH_USERNAME?: string; // 认证用户名
     AUTH_PASSWORD?: string; // 认证密码
-    AUTH_SECRET?: string;   // JWT密钥
+    AUTH_SECRET?: string; // JWT密钥
 }
 
 // 数据类型定义
@@ -64,7 +64,7 @@ export interface LoginResponse {
 
 // API 类
 export class NavigationAPI {
-    private db: D1Database;
+    private db: any;
     private authEnabled: boolean;
     private username: string;
     private password: string;
@@ -90,13 +90,17 @@ export class NavigationAPI {
         } catch {
             // 如果发生错误，可能是配置表不存在，继续初始化
         }
-        
+
         // 先创建groups表
-        await this.db.exec(`CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, order_num INTEGER NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`);
-        
+        await this.db.exec(
+            `CREATE TABLE IF NOT EXISTS groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, order_num INTEGER NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);`
+        );
+
         // 再创建sites表
-        await this.db.exec(`CREATE TABLE IF NOT EXISTS sites (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, name TEXT NOT NULL, url TEXT NOT NULL, icon TEXT, description TEXT, notes TEXT, order_num INTEGER NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE);`);
-        
+        await this.db.exec(
+            `CREATE TABLE IF NOT EXISTS sites (id INTEGER PRIMARY KEY AUTOINCREMENT, group_id INTEGER NOT NULL, name TEXT NOT NULL, url TEXT NOT NULL, icon TEXT, description TEXT, notes TEXT, order_num INTEGER NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE);`
+        );
+
         // 创建全局配置表
         await this.db.exec(`CREATE TABLE IF NOT EXISTS configs (
             key TEXT PRIMARY KEY,
@@ -104,10 +108,10 @@ export class NavigationAPI {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );`);
-        
+
         // 设置初始化标志
         await this.setConfig("DB_INITIALIZED", "true");
-        
+
         return { success: true, alreadyInitialized: false };
     }
 
@@ -118,7 +122,7 @@ export class NavigationAPI {
             return {
                 success: true,
                 token: await this.generateToken({ username: "guest" }),
-                message: "身份验证未启用，默认登录成功"
+                message: "身份验证未启用，默认登录成功",
             };
         }
 
@@ -129,40 +133,42 @@ export class NavigationAPI {
             return {
                 success: true,
                 token,
-                message: "登录成功"
+                message: "登录成功",
             };
         }
 
         return {
             success: false,
-            message: "用户名或密码错误"
+            message: "用户名或密码错误",
         };
     }
 
     // 验证令牌有效性
-    async verifyToken(token: string): Promise<{ valid: boolean; payload?: Record<string, unknown> }> {
+    async verifyToken(
+        token: string
+    ): Promise<{ valid: boolean; payload?: Record<string, unknown> }> {
         if (!this.authEnabled) {
             return { valid: true };
         }
 
         try {
             // 解析JWT
-            const [header, payload, signature] = token.split('.');
+            const [header, payload, signature] = token.split(".");
             if (!header || !payload || !signature) {
                 throw new Error("无效的Token格式");
             }
-            
+
             // 解码payload
-            const decodedPayload = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-            
+            const decodedPayload = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+
             // 验证过期时间
             if (decodedPayload.exp && decodedPayload.exp < Math.floor(Date.now() / 1000)) {
                 throw new Error("Token已过期");
             }
-            
+
             // 注意：这个简化版本没有验证签名，仅用于开发/测试
             // 在生产环境中，应该使用crypto.subtle.verify来验证签名
-            
+
             return { valid: true, payload: decodedPayload };
         } catch (error) {
             console.error("Token验证失败:", error);
@@ -176,18 +182,27 @@ export class NavigationAPI {
         const tokenPayload = {
             ...payload,
             exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24小时过期
-            iat: Math.floor(Date.now() / 1000)
+            iat: Math.floor(Date.now() / 1000),
         };
-        
+
         // 创建Header和Payload部分
-        const header = { alg: 'HS256', typ: 'JWT' };
-        const encodedHeader = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        const encodedPayload = btoa(JSON.stringify(tokenPayload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        
+        const header = { alg: "HS256", typ: "JWT" };
+        const encodedHeader = btoa(JSON.stringify(header))
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, "");
+        const encodedPayload = btoa(JSON.stringify(tokenPayload))
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, "");
+
         // 创建签名（简化版，仅用于开发/测试）
         // 在生产环境中，应该使用crypto.subtle.sign生成签名
-        const signature = btoa(this.secret + encodedHeader + encodedPayload).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        
+        const signature = btoa(this.secret + encodedHeader + encodedPayload)
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, "");
+
         // 组合JWT
         return `${encodedHeader}.${encodedPayload}.${signature}`;
     }
@@ -209,9 +224,7 @@ export class NavigationAPI {
 
     async getGroup(id: number): Promise<Group | null> {
         const result = await this.db
-            .prepare(
-                "SELECT id, name, order_num, created_at, updated_at FROM groups WHERE id = ?"
-            )
+            .prepare("SELECT id, name, order_num, created_at, updated_at FROM groups WHERE id = ?")
             .bind(id)
             .first<Group>();
         return result;
@@ -244,7 +257,9 @@ export class NavigationAPI {
         }
 
         // 构建安全的参数化查询
-        const query = `UPDATE groups SET ${updates.join(", ")} WHERE id = ? RETURNING id, name, order_num, created_at, updated_at`;
+        const query = `UPDATE groups SET ${updates.join(
+            ", "
+        )} WHERE id = ? RETURNING id, name, order_num, created_at, updated_at`;
         params.push(id);
 
         const { results } = await this.db
@@ -354,7 +369,9 @@ export class NavigationAPI {
         }
 
         // 构建安全的参数化查询
-        const query = `UPDATE sites SET ${updates.join(", ")} WHERE id = ? RETURNING id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at`;
+        const query = `UPDATE sites SET ${updates.join(
+            ", "
+        )} WHERE id = ? RETURNING id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at`;
         params.push(id);
 
         const { results } = await this.db
@@ -371,16 +388,14 @@ export class NavigationAPI {
 
     // 配置相关API
     async getConfigs(): Promise<Record<string, string>> {
-        const { results } = await this.db
-            .prepare("SELECT key, value FROM configs")
-            .all<Config>();
-        
+        const { results } = await this.db.prepare("SELECT key, value FROM configs").all<Config>();
+
         // 将结果转换为键值对对象
         const configs: Record<string, string> = {};
         for (const config of results) {
             configs[config.key] = config.value;
         }
-        
+
         return configs;
     }
 
@@ -389,7 +404,7 @@ export class NavigationAPI {
             .prepare("SELECT value FROM configs WHERE key = ?")
             .bind(key)
             .first<{ value: string }>();
-        
+
         return result ? result.value : null;
     }
 
@@ -405,7 +420,7 @@ export class NavigationAPI {
                 )
                 .bind(key, value, value)
                 .run();
-            
+
             return result.success;
         } catch (error) {
             console.error("设置配置失败:", error);
@@ -414,11 +429,8 @@ export class NavigationAPI {
     }
 
     async deleteConfig(key: string): Promise<boolean> {
-        const result = await this.db
-            .prepare("DELETE FROM configs WHERE key = ?")
-            .bind(key)
-            .run();
-        
+        const result = await this.db.prepare("DELETE FROM configs WHERE key = ?").bind(key).run();
+
         return result.success;
     }
 
@@ -459,22 +471,22 @@ export class NavigationAPI {
     async exportData(): Promise<ExportData> {
         // 获取所有分组
         const groups = await this.getGroups();
-        
+
         // 获取所有站点
         const sites = await this.getSites();
-        
+
         // 获取所有配置
         const configs = await this.getConfigs();
-        
+
         return {
             groups,
             sites,
             configs,
             version: "1.0", // 数据版本号，便于后续兼容性处理
-            exportDate: new Date().toISOString()
+            exportDate: new Date().toISOString(),
         };
     }
-    
+
     // 导入所有数据
     async importData(data: ExportData): Promise<boolean> {
         try {
@@ -482,42 +494,43 @@ export class NavigationAPI {
             // 清空现有数据
             await this.db.exec("DELETE FROM sites");
             await this.db.exec("DELETE FROM groups");
-            
+
             // 导入分组数据
             for (const group of data.groups) {
                 await this.createGroup({
                     name: group.name,
-                    order_num: group.order_num
+                    order_num: group.order_num,
                 });
             }
-            
+
             // 获取新创建的分组，用于映射ID
             const newGroups = await this.getGroups();
             const groupMap = new Map<number, number>();
-            
+
             // 创建旧ID到新ID的映射
             data.groups.forEach((oldGroup, index) => {
                 if (oldGroup.id && index < newGroups.length) {
                     groupMap.set(oldGroup.id, newGroups[index].id as number);
                 }
             });
-            
+
             // 导入站点数据，更新分组ID
             for (const site of data.sites) {
                 const newGroupId = groupMap.get(site.group_id) || site.group_id;
                 await this.createSite({
                     ...site,
-                    group_id: newGroupId
+                    group_id: newGroupId,
                 });
             }
-            
+
             // 导入配置数据
             for (const [key, value] of Object.entries(data.configs)) {
-                if (key !== "DB_INITIALIZED") { // 跳过数据库初始化标志
+                if (key !== "DB_INITIALIZED") {
+                    // 跳过数据库初始化标志
                     await this.setConfig(key, value);
                 }
             }
-            
+
             return true;
         } catch (error) {
             console.error("导入数据失败:", error);
