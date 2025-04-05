@@ -67,12 +67,14 @@ NaviHive 是一个精美的网站导航管理系统，帮助你整理和管理�
     -   TypeScript
     -   Material UI 7.0
     -   DND Kit (拖拽功能)
-    -   Tailwind CSS
+    -   Tailwind CSS 4.1
+    -   Vite 6
 
 -   **后端**：
     -   Cloudflare Workers
     -   Cloudflare D1 (SQLite)
     -   JWT 认证
+    -   Cloudflare Workers API
 
 ## 🚀 部署指南
 
@@ -101,6 +103,62 @@ NaviHive 是一个精美的网站导航管理系统，帮助你整理和管理�
 4. 点击"部署"按钮
 
 部署完成后，您将获得一个类似`https://your-project-name.username.workers.dev`的网址，这就是您的导航站地址。
+
+5. 初始化项目数据库  
+   - 登录您的 [Cloudflare 控制台](https://dash.cloudflare.com/)
+   - 进入"Workers & Pages"部分
+   - 选择您刚刚部署的项目
+   - 在左侧菜单中点击"设置" > "数据库"，您将看到已绑定的数据库（名为"navigation-db"）
+   - 点击数据库名称以进入数据库管理界面：
+
+   ![数据库管理界面](https://img.zhengmi.org/file/1743843332374_image.png)
+
+   - 在数据库管理界面，点击"查询"选项卡进入SQL编辑器
+   - 在SQL编辑器中，复制并粘贴以下SQL命令：
+
+   ```sql
+   -- 创建分组表
+   CREATE TABLE IF NOT EXISTS groups (
+       id INTEGER PRIMARY KEY AUTOINCREMENT, 
+       name TEXT NOT NULL, 
+       order_num INTEGER NOT NULL, 
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   );
+
+   -- 创建站点表
+   CREATE TABLE IF NOT EXISTS sites (
+       id INTEGER PRIMARY KEY AUTOINCREMENT, 
+       group_id INTEGER NOT NULL, 
+       name TEXT NOT NULL, 
+       url TEXT NOT NULL, 
+       icon TEXT, 
+       description TEXT, 
+       notes TEXT, 
+       order_num INTEGER NOT NULL, 
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+       FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
+   );
+
+   -- 创建配置表
+   CREATE TABLE IF NOT EXISTS configs (
+       key TEXT PRIMARY KEY,
+       value TEXT NOT NULL,
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   );
+
+   -- 设置初始化标志
+   INSERT INTO configs (key, value) VALUES ('DB_INITIALIZED', 'true');
+   ```
+
+   - 点击"运行"按钮执行SQL命令：
+
+   ![SQL编辑器界面](https://img.zhengmi.org/file/1743843528319_image.png)
+
+   - 如果SQL命令执行成功，您将看到"查询成功"的提示信息
+   - 至此，数据库初始化完成，您可以访问您的导航站首页并使用配置的管理员账号登录
 
 ### 三、手动部署方法（适合开发者）
 
@@ -143,29 +201,35 @@ wrangler d1 create navigation-db
 
 #### 4. 修改配置文件
 
-编辑`wrangler.toml`文件：
+编辑`wrangler.jsonc`文件：
 
-```toml
-# 项目配置
-name = "您的项目名称"
-main = "functions/[[path]].js"
-
-# 页面配置
-[site]
-bucket = "./dist"
-include = ["dist"]
-
-# D1数据库绑定
-[[d1_databases]]
-binding = "DB"
-database_name = "navigation-db"
-database_id = "您的数据库ID"  # 替换为您刚创建的数据库ID
-
-[vars]
-AUTH_ENABLED = "true"  # 是否启用认证
-AUTH_USERNAME = "admin"  # 管理员用户名
-AUTH_PASSWORD = "password"  # 管理员密码 (请修改为安全密码)
-AUTH_SECRET = "your-secret-key"  # JWT密钥 (请使用随机字符串)
+```json
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "您的项目名称",
+    "main": "worker/index.ts",
+    "compatibility_date": "2025-04-05",
+    "assets": {
+        "not_found_handling": "single-page-application"
+    },
+    "observability": {
+        "enabled": true
+    },
+    // D1数据库绑定
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "navigation-db",
+            "database_id": "您的数据库ID"  // 替换为您刚创建的数据库ID
+        }
+    ],
+    "vars": {
+        "AUTH_ENABLED": "true",  // 是否启用认证
+        "AUTH_USERNAME": "admin",  // 管理员用户名
+        "AUTH_PASSWORD": "password",  // 管理员密码 (请修改为安全密码)
+        "AUTH_SECRET": "your-secret-key"  // JWT密钥 (请使用随机字符串)
+    }
+}
 ```
 
 #### 5. 开发模式
@@ -183,18 +247,25 @@ pnpm build
 #### 7. 部署项目
 
 ```bash
-wrangler publish
+pnpm deploy
 ```
 
 部署完成后，您将获得一个类似`https://您的项目名称.您的用户名.workers.dev`的网址。
 
 ### 四、初始化与数据库设置
 
-无论您使用哪种部署方法，部署完成后，还需要进行数据库初始化：
+无论您使用哪种部署方法，部署完成后，需要进行数据库初始化。您有两种方式：
 
-1. 访问`https://您的网站地址/api/init`
+#### 方式一：通过SQL初始化（推荐）
+
+如一键部署方法中的步骤5所述，通过Cloudflare控制台执行SQL命令初始化数据库。
+
+#### 方式二：通过API初始化
+
+1. 访问`https://您的网站地址/init`
 2. 如果看到"数据库初始化成功"的消息，说明初始化成功
-3. 访问您的导航站首页，使用您配置的管理员用户名和密码登录
+
+初始化完成后，访问您的导航站首页，使用您配置的管理员用户名和密码登录。
 
 ## 📝 使用指南
 
@@ -236,7 +307,7 @@ A: 如果使用的是一键部署，可以再次点击部署按钮；如果是�
 A: 您可以使用 Wrangler 工具导出 D1 数据库：
 
 ```bash
-wrangler d1 export navigation-db
+wrangler d1 database export navigation-db
 ```
 
 **Q: 数据库结构是什么样的？**  
@@ -249,15 +320,16 @@ A: NaviHive 使用两个主要表格：
 ## 🗂️ 项目结构
 
 ```
-├── functions/            # Cloudflare Workers函数
-│   └── api/              # API端点
+├── worker/               # Cloudflare Workers函数
+│   └── index.ts          # Workers入口文件
 ├── public/               # 静态资源
 │   └── svg/              # SVG图标
 ├── src/                  # 前端源码
 │   ├── API/              # API客户端
 │   ├── components/       # React组件
 │   └── App.tsx           # 主应用组件
-├── wrangler.toml         # Cloudflare Workers配置
+├── wrangler.jsonc        # Cloudflare Workers配置
+├── vite.config.ts        # Vite配置文件
 ├── package.json          # 项目依赖
 └── README.md             # 项目说明
 ```
@@ -283,6 +355,9 @@ A: NaviHive 使用两个主要表格：
 -   [DND Kit](https://dndkit.com/)
 -   [Cloudflare Workers](https://workers.cloudflare.com/)
 -   [Vite](https://vitejs.dev/)
+-   [Tailwind CSS](https://tailwindcss.com/)
+-   [TypeScript](https://www.typescriptlang.org/)
+-   [Cloudflare D1](https://developers.cloudflare.com/d1/)
 
 ---
 
