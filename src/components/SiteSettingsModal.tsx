@@ -75,7 +75,29 @@ export default function SiteSettingsModal({
     const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { value } = e.target;
         setFormData(prev => ({ ...prev, icon: value }));
-        setIconPreview(value);
+
+        // 检查URL是否是有效的图片URL
+        const isValidImageUrl = (url: string): boolean => {
+            // 检查URL格式
+            try {
+                new URL(url);
+                // 检查是否是常见图片格式
+                return (
+                    /\.(jpeg|jpg|gif|png|svg|webp|ico)(\?.*)?$/i.test(url) ||
+                    /^https?:\/\/.*\/favicon\.(ico|png)(\?.*)?$/i.test(url) ||
+                    /^data:image\//i.test(url)
+                );
+            } catch {
+                return false;
+            }
+        };
+
+        // 仅当输入看起来像有效的图片URL时才设置预览
+        if (value && isValidImageUrl(value)) {
+            setIconPreview(value);
+        } else {
+            setIconPreview(null);
+        }
     };
 
     // 处理图标加载错误
