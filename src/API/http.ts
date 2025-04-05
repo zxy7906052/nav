@@ -1,10 +1,30 @@
-// @ts-nocheck
 // src/api/http.ts
 // 不使用外部JWT库，改为内置的crypto API
 
+// 定义D1数据库类型
+interface D1Database {
+    prepare(query: string): D1PreparedStatement;
+    exec(query: string): Promise<D1Result>;
+    batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
+}
+
+interface D1PreparedStatement {
+    bind(...values: unknown[]): D1PreparedStatement;
+    first<T = unknown>(column?: string): Promise<T | null>;
+    run<T = unknown>(): Promise<D1Result<T>>;
+    all<T = unknown>(): Promise<D1Result<T>>;
+}
+
+interface D1Result<T = unknown> {
+    results?: T[];
+    success: boolean;
+    error?: string;
+    meta?: unknown;
+}
+
 // 定义环境变量接口
 interface Env {
-    DB: any;
+    DB: D1Database;
     AUTH_ENABLED?: string; // 是否启用身份验证
     AUTH_USERNAME?: string; // 认证用户名
     AUTH_PASSWORD?: string; // 认证密码
@@ -64,7 +84,7 @@ export interface LoginResponse {
 
 // API 类
 export class NavigationAPI {
-    private db: any;
+    private db: D1Database;
     private authEnabled: boolean;
     private username: string;
     private password: string;
@@ -214,12 +234,12 @@ export class NavigationAPI {
 
     // 分组相关 API
     async getGroups(): Promise<Group[]> {
-        const { results } = await this.db
+        const result = await this.db
             .prepare(
                 "SELECT id, name, order_num, created_at, updated_at FROM groups ORDER BY order_num"
             )
             .all<Group>();
-        return results;
+        return result.results || [];
     }
 
     async getGroup(id: number): Promise<Group | null> {
@@ -231,13 +251,16 @@ export class NavigationAPI {
     }
 
     async createGroup(group: Group): Promise<Group> {
-        const { results } = await this.db
+        const result = await this.db
             .prepare(
                 "INSERT INTO groups (name, order_num) VALUES (?, ?) RETURNING id, name, order_num, created_at, updated_at"
             )
             .bind(group.name, group.order_num)
             .all<Group>();
-        return results[0];
+        if (!result.results || result.results.length === 0) {
+            throw new Error("创建分组失败");
+        }
+        return result.results[0];
     }
 
     async updateGroup(id: number, group: Partial<Group>): Promise<Group | null> {
@@ -262,11 +285,15 @@ export class NavigationAPI {
         )} WHERE id = ? RETURNING id, name, order_num, created_at, updated_at`;
         params.push(id);
 
-        const { results } = await this.db
+        const result = await this.db
             .prepare(query)
             .bind(...params)
             .all<Group>();
-        return results.length > 0 ? results[0] : null;
+
+        if (!result.results || result.results.length === 0) {
+            return null;
+        }
+        return result.results[0];
     }
 
     async deleteGroup(id: number): Promise<boolean> {
@@ -287,11 +314,11 @@ export class NavigationAPI {
 
         query += " ORDER BY order_num";
 
-        const { results } = await this.db
+        const result = await this.db
             .prepare(query)
             .bind(...params)
             .all<Site>();
-        return results;
+        return result.results || [];
     }
 
     async getSite(id: number): Promise<Site | null> {
@@ -305,7 +332,7 @@ export class NavigationAPI {
     }
 
     async createSite(site: Site): Promise<Site> {
-        const { results } = await this.db
+        const result = await this.db
             .prepare(
                 `
       INSERT INTO sites (group_id, name, url, icon, description, notes, order_num) 
@@ -324,7 +351,10 @@ export class NavigationAPI {
             )
             .all<Site>();
 
-        return results[0];
+        if (!result.results || result.results.length === 0) {
+            throw new Error("创建站点失败");
+        }
+        return result.results[0];
     }
 
     async updateSite(id: number, site: Partial<Site>): Promise<Site | null> {
@@ -374,11 +404,15 @@ export class NavigationAPI {
         )} WHERE id = ? RETURNING id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at`;
         params.push(id);
 
-        const { results } = await this.db
+        const result = await this.db
             .prepare(query)
             .bind(...params)
             .all<Site>();
-        return results.length > 0 ? results[0] : null;
+
+        if (!result.results || result.results.length === 0) {
+            return null;
+        }
+        return result.results[0];
     }
 
     async deleteSite(id: number): Promise<boolean> {
@@ -388,11 +422,11 @@ export class NavigationAPI {
 
     // 配置相关API
     async getConfigs(): Promise<Record<string, string>> {
-        const { results } = await this.db.prepare("SELECT key, value FROM configs").all<Config>();
+        const result = await this.db.prepare("SELECT key, value FROM configs").all<Config>();
 
         // 将结果转换为键值对对象
         const configs: Record<string, string> = {};
-        for (const config of results) {
+        for (const config of result.results || []) {
             configs[config.key] = config.value;
         }
 

@@ -19,15 +19,10 @@ import {
     horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 // 引入Material UI组件
-import { 
-    Paper, 
-    Typography, 
-    Button, 
-    Box
-} from "@mui/material";
-import SortIcon from '@mui/icons-material/Sort';
-import SaveIcon from '@mui/icons-material/Save';
-import AddIcon from '@mui/icons-material/Add';
+import { Paper, Typography, Button, Box } from "@mui/material";
+import SortIcon from "@mui/icons-material/Sort";
+import SaveIcon from "@mui/icons-material/Save";
+import AddIcon from "@mui/icons-material/Add";
 
 // 更新组件属性接口
 interface GroupCardProps {
@@ -117,27 +112,27 @@ const GroupCard: React.FC<GroupCardProps> = ({
                         items={sitesToRender.map(site => `site-${site.id}`)}
                         strategy={horizontalListSortingStrategy}
                     >
-                        <Box sx={{ width: '100%' }}>
+                        <Box sx={{ width: "100%" }}>
                             <Box
                                 sx={{
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
+                                    display: "flex",
+                                    flexWrap: "wrap",
                                     margin: -1, // 抵消内部padding，确保边缘对齐
                                 }}
                             >
                                 {sitesToRender.map((site, idx) => (
-                                    <Box 
-                                        key={site.id || idx} 
-                                        sx={{ 
+                                    <Box
+                                        key={site.id || idx}
+                                        sx={{
                                             width: {
-                                                xs: '50%',
-                                                sm: '50%',
-                                                md: '25%',
-                                                lg: '25%',
-                                                xl: '25%'
+                                                xs: "50%",
+                                                sm: "50%",
+                                                md: "25%",
+                                                lg: "25%",
+                                                xl: "25%",
                                             },
                                             padding: 1, // 内部间距，更均匀的分布
-                                            boxSizing: 'border-box', // 确保padding不影响宽度计算
+                                            boxSizing: "border-box", // 确保padding不影响宽度计算
                                         }}
                                     >
                                         <SiteCard
@@ -160,24 +155,24 @@ const GroupCard: React.FC<GroupCardProps> = ({
         return (
             <Box
                 sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
+                    display: "flex",
+                    flexWrap: "wrap",
                     margin: -1, // 抵消内部padding，确保边缘对齐
                 }}
             >
                 {sitesToRender.map(site => (
-                    <Box 
-                        key={site.id} 
-                        sx={{ 
+                    <Box
+                        key={site.id}
+                        sx={{
                             width: {
-                                xs: '50%',
-                                sm: '50%',
-                                md: '25%',
-                                lg: '25%',
-                                xl: '25%'
+                                xs: "50%",
+                                sm: "50%",
+                                md: "25%",
+                                lg: "25%",
+                                xl: "25%",
                             },
                             padding: 1, // 内部间距，更均匀的分布
-                            boxSizing: 'border-box', // 确保padding不影响宽度计算
+                            boxSizing: "border-box", // 确保padding不影响宽度计算
                         }}
                     >
                         <SiteCard
@@ -204,36 +199,26 @@ const GroupCard: React.FC<GroupCardProps> = ({
             sx={{
                 borderRadius: 4,
                 p: 3,
-                transition: 'all 0.3s ease-in-out',
-                border: '1px solid transparent',
-                '&:hover': {
+                transition: "all 0.3s ease-in-out",
+                border: "1px solid transparent",
+                "&:hover": {
                     boxShadow: sortMode === "None" ? 6 : 3,
-                    borderColor: 'divider',
-                    transform: sortMode === "None" ? 'scale(1.01)' : 'none'
-                }
+                    borderColor: "divider",
+                    transform: sortMode === "None" ? "scale(1.01)" : "none",
+                },
             }}
         >
-            <Box 
-                display="flex" 
-                justifyContent="space-between" 
-                alignItems="center" 
-                mb={2.5}
-            >
-                <Typography 
-                    variant="h5" 
-                    component="h2" 
-                    fontWeight="600" 
-                    color="text.primary"
-                >
+            <Box display='flex' justifyContent='space-between' alignItems='center' mb={2.5}>
+                <Typography variant='h5' component='h2' fontWeight='600' color='text.primary'>
                     {group.name}
                 </Typography>
-                
+
                 <Box>
                     {isCurrentEditingGroup ? (
                         <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
+                            variant='contained'
+                            color='primary'
+                            size='small'
                             startIcon={<SaveIcon />}
                             onClick={handleSaveSiteOrder}
                         >
@@ -244,9 +229,9 @@ const GroupCard: React.FC<GroupCardProps> = ({
                             <>
                                 {onAddSite && (
                                     <Button
-                                        variant="contained"
-                                        color="primary"
-                                        size="small"
+                                        variant='contained'
+                                        color='primary'
+                                        size='small'
                                         onClick={() => onAddSite(group.id!)}
                                         sx={{ mr: 1 }}
                                         startIcon={<AddIcon />}
@@ -255,9 +240,9 @@ const GroupCard: React.FC<GroupCardProps> = ({
                                     </Button>
                                 )}
                                 <Button
-                                    variant="outlined"
-                                    color="primary"
-                                    size="small"
+                                    variant='outlined'
+                                    color='primary'
+                                    size='small'
                                     startIcon={<SortIcon />}
                                     onClick={() => onStartSiteSort(group.id!)}
                                 >

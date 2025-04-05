@@ -43,7 +43,7 @@ export default function SiteSettingsModal({
     groups = [],
 }: SiteSettingsModalProps) {
     const theme = useTheme();
-    
+
     // 存储字符串形式的group_id，与Material-UI的Select兼容
     const [formData, setFormData] = useState({
         name: site.name,
@@ -51,7 +51,7 @@ export default function SiteSettingsModal({
         icon: site.icon || "",
         description: site.description || "",
         notes: site.notes || "",
-        group_id: String(site.group_id)
+        group_id: String(site.group_id),
     });
 
     // 用于预览图标
@@ -67,7 +67,7 @@ export default function SiteSettingsModal({
     const handleSelectChange = (e: SelectChangeEvent) => {
         setFormData(prev => ({
             ...prev,
-            group_id: e.target.value
+            group_id: e.target.value,
         }));
     };
 
@@ -92,7 +92,7 @@ export default function SiteSettingsModal({
         onUpdate({
             ...site,
             ...formData,
-            group_id: Number(formData.group_id)
+            group_id: Number(formData.group_id),
         });
 
         onClose();

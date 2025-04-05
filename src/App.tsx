@@ -25,13 +25,13 @@ import {
 } from "@dnd-kit/sortable";
 import SortableGroupItem from "./components/SortableGroupItem";
 // Material UI 导入
-import { 
-    Container, 
-    Typography, 
-    Box, 
-    Button, 
-    CircularProgress, 
-    Alert, 
+import {
+    Container,
+    Typography,
+    Box,
+    Button,
+    CircularProgress,
+    Alert,
     Stack,
     Paper,
     createTheme,
@@ -50,17 +50,17 @@ import {
     ListItemIcon,
     ListItemText,
 } from "@mui/material";
-import SortIcon from '@mui/icons-material/Sort';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Cancel';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close';
-import SettingsIcon from '@mui/icons-material/Settings';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import LogoutIcon from '@mui/icons-material/Logout';
-import MenuIcon from '@mui/icons-material/Menu';
+import SortIcon from "@mui/icons-material/Sort";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import SettingsIcon from "@mui/icons-material/Settings";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import LogoutIcon from "@mui/icons-material/Logout";
+import MenuIcon from "@mui/icons-material/Menu";
 
 // 根据环境选择使用真实API还是模拟API
 const isDevEnvironment = import.meta.env.DEV;
@@ -82,36 +82,36 @@ enum SortMode {
 const DEFAULT_CONFIGS = {
     "site.title": "导航站",
     "site.name": "导航站",
-    "site.customCss": ""
+    "site.customCss": "",
 };
 
 function App() {
     // 主题模式状态
     const [darkMode, setDarkMode] = useState(() => {
-        const savedTheme = localStorage.getItem('theme');
+        const savedTheme = localStorage.getItem("theme");
         if (savedTheme) {
-            return savedTheme === 'dark';
+            return savedTheme === "dark";
         }
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return window.matchMedia("(prefers-color-scheme: dark)").matches;
     });
-    
+
     // 创建Material UI主题
     const theme = useMemo(
         () =>
             createTheme({
                 palette: {
-                    mode: darkMode ? 'dark' : 'light',
+                    mode: darkMode ? "dark" : "light",
                 },
             }),
         [darkMode]
     );
-    
+
     // 切换主题的回调函数
     const toggleTheme = () => {
         setDarkMode(!darkMode);
-        localStorage.setItem('theme', !darkMode ? 'dark' : 'light');
+        localStorage.setItem("theme", !darkMode ? "dark" : "light");
     };
-    
+
     const [groups, setGroups] = useState<GroupWithSites[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -152,21 +152,21 @@ function App() {
     // 新增状态管理
     const [openAddGroup, setOpenAddGroup] = useState(false);
     const [openAddSite, setOpenAddSite] = useState(false);
-    const [newGroup, setNewGroup] = useState<Partial<Group>>({ name: '', order_num: 0 });
-    const [newSite, setNewSite] = useState<Partial<Site>>({ 
-        name: '', 
-        url: '', 
-        icon: '', 
-        description: '', 
-        notes: '',
+    const [newGroup, setNewGroup] = useState<Partial<Group>>({ name: "", order_num: 0 });
+    const [newSite, setNewSite] = useState<Partial<Site>>({
+        name: "",
+        url: "",
+        icon: "",
+        description: "",
+        notes: "",
         order_num: 0,
-        group_id: 0
+        group_id: 0,
     });
 
     // 新增菜单状态
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
     const openMenu = Boolean(menuAnchorEl);
-    
+
     // 新增导入对话框状态
     const [openImport, setOpenImport] = useState(false);
     const [importFile, setImportFile] = useState<File | null>(null);
@@ -177,7 +177,7 @@ function App() {
     const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
         setMenuAnchorEl(event.currentTarget);
     };
-    
+
     const handleMenuClose = () => {
         setMenuAnchorEl(null);
     };
@@ -187,21 +187,21 @@ function App() {
         try {
             setIsAuthChecking(true);
             console.log("开始检查认证状态...");
-            
+
             // 尝试进行API调用，检查是否需要认证
             const result = await api.checkAuthStatus();
             console.log("认证检查结果:", result);
-            
+
             if (!result) {
                 // 未认证，需要登录
                 console.log("未认证，设置需要登录状态");
-                
+
                 // 如果有token但无效，清除它
                 if (api.isLoggedIn()) {
                     console.log("清除无效token");
                     api.logout();
                 }
-                
+
                 // 直接更新状态，确保先设置认证状态再结束检查
                 setIsAuthenticated(false);
                 setIsAuthRequired(true);
@@ -209,7 +209,7 @@ function App() {
                 // 直接更新认证状态
                 setIsAuthenticated(true);
                 setIsAuthRequired(false);
-                
+
                 // 如果已经登录或不需要认证，继续加载数据
                 console.log("已认证，开始加载数据");
                 await fetchData();
@@ -234,9 +234,9 @@ function App() {
         try {
             setLoginLoading(true);
             setLoginError(null);
-            
+
             const result = await api.login(username, password);
-            
+
             if (result.success) {
                 setIsAuthenticated(true);
                 // 登录成功后加载数据
@@ -258,11 +258,11 @@ function App() {
         api.logout();
         setIsAuthenticated(false);
         setIsAuthRequired(true);
-        
+
         // 清空数据
         setGroups([]);
         handleMenuClose();
-        
+
         // 显示提示信息
         setError("已退出登录，请重新登录");
     };
@@ -273,11 +273,11 @@ function App() {
             const configsData = await api.getConfigs();
             setConfigs({
                 ...DEFAULT_CONFIGS,
-                ...configsData
+                ...configsData,
             });
             setTempConfigs({
                 ...DEFAULT_CONFIGS,
-                ...configsData
+                ...configsData,
             });
         } catch (error) {
             console.error("加载配置失败:", error);
@@ -288,7 +288,7 @@ function App() {
     useEffect(() => {
         // 检查认证状态
         checkAuthStatus();
-        
+
         // 确保初始化时重置排序状态
         setSortMode(SortMode.None);
         setCurrentSortingGroupId(null);
@@ -303,13 +303,13 @@ function App() {
     useEffect(() => {
         const customCss = configs["site.customCss"];
         let styleElement = document.getElementById("custom-style");
-        
+
         if (!styleElement) {
             styleElement = document.createElement("style");
             styleElement.id = "custom-style";
             document.head.appendChild(styleElement);
         }
-        
+
         // 添加安全过滤，防止CSS注入攻击
         const sanitizedCss = sanitizeCSS(customCss || "");
         styleElement.textContent = sanitizedCss;
@@ -318,27 +318,29 @@ function App() {
     // CSS安全过滤函数
     const sanitizeCSS = (css: string): string => {
         if (!css) return "";
-        
+
         // 移除可能导致XSS的内容
-        return css
-            // 移除包含javascript:的URL
-            .replace(/url\s*\(\s*(['"]?)javascript:/gi, 'url($1invalid:')
-            // 移除expression
-            .replace(/expression\s*\(/gi, 'invalid(')
-            // 移除import
-            .replace(/@import/gi, '/* @import */')
-            // 移除behavior
-            .replace(/behavior\s*:/gi, '/* behavior: */')
-            // 过滤content属性中的不安全内容
-            .replace(/content\s*:\s*(['"]?).*?url\s*\(\s*(['"]?)javascript:/gi, 'content: $1');
+        return (
+            css
+                // 移除包含javascript:的URL
+                .replace(/url\s*\(\s*(['"]?)javascript:/gi, "url($1invalid:")
+                // 移除expression
+                .replace(/expression\s*\(/gi, "invalid(")
+                // 移除import
+                .replace(/@import/gi, "/* @import */")
+                // 移除behavior
+                .replace(/behavior\s*:/gi, "/* behavior: */")
+                // 过滤content属性中的不安全内容
+                .replace(/content\s*:\s*(['"]?).*?url\s*\(\s*(['"]?)javascript:/gi, "content: $1")
+        );
     };
 
     // 同步HTML的class以保持与现有CSS兼容
     useEffect(() => {
         if (darkMode) {
-            document.documentElement.classList.add('dark');
+            document.documentElement.classList.add("dark");
         } else {
-            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.remove("dark");
         }
     }, [darkMode]);
 
@@ -366,7 +368,7 @@ function App() {
         } catch (error) {
             console.error("加载数据失败:", error);
             setError("加载数据失败: " + (error instanceof Error ? error.message : "未知错误"));
-            
+
             // 如果因为认证问题导致加载失败，处理认证状态
             if (error instanceof Error && error.message.includes("认证")) {
                 setIsAuthRequired(true);
@@ -498,7 +500,7 @@ function App() {
 
     // 新增分组相关函数
     const handleOpenAddGroup = () => {
-        setNewGroup({ name: '', order_num: groups.length });
+        setNewGroup({ name: "", order_num: groups.length });
         setOpenAddGroup(true);
     };
 
@@ -509,7 +511,7 @@ function App() {
     const handleGroupInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setNewGroup({
             ...newGroup,
-            [e.target.name]: e.target.value
+            [e.target.name]: e.target.value,
         });
     };
 
@@ -532,18 +534,20 @@ function App() {
     // 新增站点相关函数
     const handleOpenAddSite = (groupId: number) => {
         const group = groups.find(g => g.id === groupId);
-        const maxOrderNum = group?.sites.length ? Math.max(...group.sites.map(s => s.order_num)) + 1 : 0;
-        
+        const maxOrderNum = group?.sites.length
+            ? Math.max(...group.sites.map(s => s.order_num)) + 1
+            : 0;
+
         setNewSite({
-            name: '',
-            url: '',
-            icon: '',
-            description: '',
-            notes: '',
+            name: "",
+            url: "",
+            icon: "",
+            description: "",
+            notes: "",
             group_id: groupId,
-            order_num: maxOrderNum
+            order_num: maxOrderNum,
         });
-        
+
         setOpenAddSite(true);
     };
 
@@ -554,7 +558,7 @@ function App() {
     const handleSiteInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setNewSite({
             ...newSite,
-            [e.target.name]: e.target.value
+            [e.target.name]: e.target.value,
         });
     };
 
@@ -576,7 +580,7 @@ function App() {
 
     // 配置相关函数
     const handleOpenConfig = () => {
-        setTempConfigs({...configs});
+        setTempConfigs({ ...configs });
         setOpenConfig(true);
     };
 
@@ -587,7 +591,7 @@ function App() {
     const handleConfigInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTempConfigs({
             ...tempConfigs,
-            [e.target.name]: e.target.value
+            [e.target.name]: e.target.value,
         });
     };
 
@@ -599,9 +603,9 @@ function App() {
                     await api.setConfig(key, value);
                 }
             }
-            
+
             // 更新配置状态
-            setConfigs({...tempConfigs});
+            setConfigs({ ...tempConfigs });
             handleCloseConfig();
         } catch (error) {
             console.error("保存配置失败:", error);
@@ -614,24 +618,23 @@ function App() {
         try {
             setLoading(true);
             handleMenuClose();
-            
+
             const data = await api.exportData();
-            
+
             // 创建Blob对象
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+
             // 创建下载链接
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
+            const a = document.createElement("a");
             a.href = url;
             a.download = `navigation-data-${new Date().toISOString().slice(0, 10)}.json`;
-            
+
             // 触发下载并清理
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
         } catch (error) {
             console.error("导出数据失败:", error);
             setError("导出数据失败: " + (error instanceof Error ? error.message : "未知错误"));
@@ -639,7 +642,7 @@ function App() {
             setLoading(false);
         }
     };
-    
+
     // 处理导入对话框
     const handleOpenImport = () => {
         setImportFile(null);
@@ -647,11 +650,11 @@ function App() {
         setOpenImport(true);
         handleMenuClose();
     };
-    
+
     const handleCloseImport = () => {
         setOpenImport(false);
     };
-    
+
     // 处理文件选择
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -659,30 +662,30 @@ function App() {
             setImportError(null);
         }
     };
-    
+
     // 处理导入数据
     const handleImportData = async () => {
         if (!importFile) {
             setImportError("请选择要导入的文件");
             return;
         }
-        
+
         try {
             setImportLoading(true);
             setImportError(null);
-            
+
             // 读取文件内容
             const fileContent = await importFile.text();
             const data = JSON.parse(fileContent);
-            
+
             // 验证数据格式
             if (!data.groups || !data.sites || !data.configs) {
                 throw new Error("导入的文件格式不正确");
             }
-            
+
             // 导入数据
             const result = await api.importData(data);
-            
+
             if (result) {
                 // 关闭对话框
                 handleCloseImport();
@@ -692,10 +695,11 @@ function App() {
             } else {
                 throw new Error("导入失败");
             }
-            
         } catch (error) {
             console.error("导入数据失败:", error);
-            setImportError("导入数据失败: " + (error instanceof Error ? error.message : "未知错误"));
+            setImportError(
+                "导入数据失败: " + (error instanceof Error ? error.message : "未知错误")
+            );
         } finally {
             setImportLoading(false);
         }
@@ -704,20 +708,16 @@ function App() {
     // 渲染登录页面
     const renderLoginForm = () => {
         return (
-            <Box 
-                sx={{ 
-                    minHeight: '100vh', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    bgcolor: 'background.default'
+            <Box
+                sx={{
+                    minHeight: "100vh",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "background.default",
                 }}
             >
-                <LoginForm 
-                    onLogin={handleLogin}
-                    loading={loginLoading}
-                    error={loginError}
-                />
+                <LoginForm onLogin={handleLogin} loading={loginLoading} error={loginError} />
             </Box>
         );
     };
@@ -727,13 +727,13 @@ function App() {
         return (
             <ThemeProvider theme={theme}>
                 <CssBaseline />
-                <Box 
-                    sx={{ 
-                        minHeight: '100vh', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        bgcolor: 'background.default'
+                <Box
+                    sx={{
+                        minHeight: "100vh",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: "background.default",
                     }}
                 >
                     <CircularProgress size={60} thickness={4} />
@@ -755,44 +755,44 @@ function App() {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Box 
-                sx={{ 
-                    minHeight: '100vh',
-                    bgcolor: 'background.default',
-                    color: 'text.primary',
-                    transition: 'all 0.3s ease-in-out'
+            <Box
+                sx={{
+                    minHeight: "100vh",
+                    bgcolor: "background.default",
+                    color: "text.primary",
+                    transition: "all 0.3s ease-in-out",
                 }}
             >
-                <Container 
-                    maxWidth="lg" 
-                    sx={{ 
-                        py: 4, 
-                        px: { xs: 2, sm: 3, md: 4 } 
+                <Container
+                    maxWidth='lg'
+                    sx={{
+                        py: 4,
+                        px: { xs: 2, sm: 3, md: 4 },
                     }}
                 >
-                    <Box 
-                        sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            mb: 5
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            mb: 5,
                         }}
                     >
-                        <Typography 
-                            variant="h3" 
-                            component="h1" 
-                            fontWeight="bold" 
-                            color="text.primary"
+                        <Typography
+                            variant='h3'
+                            component='h1'
+                            fontWeight='bold'
+                            color='text.primary'
                         >
                             {configs["site.name"]}
                         </Typography>
-                        <Stack direction="row" spacing={2} alignItems="center">
+                        <Stack direction='row' spacing={2} alignItems='center'>
                             {sortMode !== SortMode.None ? (
                                 <>
                                     {sortMode === SortMode.GroupSort && (
                                         <Button
-                                            variant="contained"
-                                            color="primary"
+                                            variant='contained'
+                                            color='primary'
                                             startIcon={<SaveIcon />}
                                             onClick={handleSaveGroupOrder}
                                         >
@@ -800,8 +800,8 @@ function App() {
                                         </Button>
                                     )}
                                     <Button
-                                        variant="outlined"
-                                        color="inherit"
+                                        variant='outlined'
+                                        color='inherit'
                                         startIcon={<CancelIcon />}
                                         onClick={cancelSort}
                                     >
@@ -811,65 +811,68 @@ function App() {
                             ) : (
                                 <>
                                     <Button
-                                        variant="contained"
-                                        color="primary"
+                                        variant='contained'
+                                        color='primary'
                                         startIcon={<AddIcon />}
                                         onClick={handleOpenAddGroup}
                                     >
                                         新增分组
                                     </Button>
-                                    
+
                                     <Button
-                                        variant="outlined"
-                                        color="primary"
+                                        variant='outlined'
+                                        color='primary'
                                         startIcon={<MenuIcon />}
                                         onClick={handleMenuOpen}
-                                        aria-controls={openMenu ? 'navigation-menu' : undefined}
-                                        aria-haspopup="true"
-                                        aria-expanded={openMenu ? 'true' : undefined}
+                                        aria-controls={openMenu ? "navigation-menu" : undefined}
+                                        aria-haspopup='true'
+                                        aria-expanded={openMenu ? "true" : undefined}
                                     >
                                         更多选项
                                     </Button>
                                     <Menu
-                                        id="navigation-menu"
+                                        id='navigation-menu'
                                         anchorEl={menuAnchorEl}
                                         open={openMenu}
                                         onClose={handleMenuClose}
                                         MenuListProps={{
-                                            'aria-labelledby': 'navigation-button',
+                                            "aria-labelledby": "navigation-button",
                                         }}
                                     >
                                         <MenuItem onClick={startGroupSort}>
                                             <ListItemIcon>
-                                                <SortIcon fontSize="small" />
+                                                <SortIcon fontSize='small' />
                                             </ListItemIcon>
                                             <ListItemText>编辑排序</ListItemText>
                                         </MenuItem>
                                         <MenuItem onClick={handleOpenConfig}>
                                             <ListItemIcon>
-                                                <SettingsIcon fontSize="small" />
+                                                <SettingsIcon fontSize='small' />
                                             </ListItemIcon>
                                             <ListItemText>网站设置</ListItemText>
                                         </MenuItem>
                                         <Divider />
                                         <MenuItem onClick={handleExportData}>
                                             <ListItemIcon>
-                                                <FileDownloadIcon fontSize="small" />
+                                                <FileDownloadIcon fontSize='small' />
                                             </ListItemIcon>
                                             <ListItemText>导出数据</ListItemText>
                                         </MenuItem>
                                         <MenuItem onClick={handleOpenImport}>
                                             <ListItemIcon>
-                                                <FileUploadIcon fontSize="small" />
+                                                <FileUploadIcon fontSize='small' />
                                             </ListItemIcon>
                                             <ListItemText>导入数据</ListItemText>
                                         </MenuItem>
                                         {isAuthenticated && (
                                             <>
                                                 <Divider />
-                                                <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-                                                    <ListItemIcon sx={{ color: 'error.main' }}>
-                                                        <LogoutIcon fontSize="small" />
+                                                <MenuItem
+                                                    onClick={handleLogout}
+                                                    sx={{ color: "error.main" }}
+                                                >
+                                                    <ListItemIcon sx={{ color: "error.main" }}>
+                                                        <LogoutIcon fontSize='small' />
                                                     </ListItemIcon>
                                                     <ListItemText>退出登录</ListItemText>
                                                 </MenuItem>
@@ -883,12 +886,12 @@ function App() {
                     </Box>
 
                     {loading && (
-                        <Box 
-                            sx={{ 
-                                display: 'flex', 
-                                justifyContent: 'center', 
-                                alignItems: 'center', 
-                                height: '200px' 
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                height: "200px",
                             }}
                         >
                             <CircularProgress size={60} thickness={4} />
@@ -896,21 +899,19 @@ function App() {
                     )}
 
                     {error && (
-                        <Alert 
-                            severity="error" 
-                            variant="outlined"
-                            sx={{ mb: 4 }}
-                        >
-                            <Typography fontWeight="bold" component="span">错误! </Typography>
+                        <Alert severity='error' variant='outlined' sx={{ mb: 4 }}>
+                            <Typography fontWeight='bold' component='span'>
+                                错误!{" "}
+                            </Typography>
                             {error}
                         </Alert>
                     )}
 
                     {!loading && !error && (
-                        <Box 
-                            sx={{ 
-                                '& > *': { mb: 5 },
-                                minHeight: '100px'
+                        <Box
+                            sx={{
+                                "& > *": { mb: 5 },
+                                minHeight: "100px",
                             }}
                         >
                             {sortMode === SortMode.GroupSort ? (
@@ -923,12 +924,12 @@ function App() {
                                         items={groups.map(group => group.id.toString())}
                                         strategy={verticalListSortingStrategy}
                                     >
-                                        <Stack 
-                                            spacing={2} 
-                                            sx={{ 
-                                                '& > *': { 
-                                                    transition: 'none'
-                                                }
+                                        <Stack
+                                            spacing={2}
+                                            sx={{
+                                                "& > *": {
+                                                    transition: "none",
+                                                },
                                             }}
                                         >
                                             {groups.map(group => (
@@ -947,7 +948,9 @@ function App() {
                                         <GroupCard
                                             key={`group-${group.id}`}
                                             group={group}
-                                            sortMode={sortMode === SortMode.None ? "None" : "SiteSort"}
+                                            sortMode={
+                                                sortMode === SortMode.None ? "None" : "SiteSort"
+                                            }
                                             currentSortingGroupId={currentSortingGroupId}
                                             onUpdate={handleSiteUpdate}
                                             onDelete={handleSiteDelete}
@@ -962,14 +965,19 @@ function App() {
                     )}
 
                     {/* 新增分组对话框 */}
-                    <Dialog open={openAddGroup} onClose={handleCloseAddGroup} maxWidth="sm" fullWidth>
+                    <Dialog
+                        open={openAddGroup}
+                        onClose={handleCloseAddGroup}
+                        maxWidth='sm'
+                        fullWidth
+                    >
                         <DialogTitle>
                             新增分组
                             <IconButton
-                                aria-label="close"
+                                aria-label='close'
                                 onClick={handleCloseAddGroup}
                                 sx={{
-                                    position: 'absolute',
+                                    position: "absolute",
                                     right: 8,
                                     top: 8,
                                 }}
@@ -978,38 +986,40 @@ function App() {
                             </IconButton>
                         </DialogTitle>
                         <DialogContent>
-                            <DialogContentText sx={{ mb: 2 }}>
-                                请输入新分组的信息
-                            </DialogContentText>
+                            <DialogContentText sx={{ mb: 2 }}>请输入新分组的信息</DialogContentText>
                             <TextField
                                 autoFocus
-                                margin="dense"
-                                id="group-name"
-                                name="name"
-                                label="分组名称"
-                                type="text"
+                                margin='dense'
+                                id='group-name'
+                                name='name'
+                                label='分组名称'
+                                type='text'
                                 fullWidth
-                                variant="outlined"
+                                variant='outlined'
                                 value={newGroup.name}
                                 onChange={handleGroupInputChange}
                                 sx={{ mb: 2 }}
                             />
                         </DialogContent>
                         <DialogActions sx={{ px: 3, pb: 3 }}>
-                            <Button onClick={handleCloseAddGroup} variant="outlined">取消</Button>
-                            <Button onClick={handleCreateGroup} variant="contained" color="primary">创建</Button>
+                            <Button onClick={handleCloseAddGroup} variant='outlined'>
+                                取消
+                            </Button>
+                            <Button onClick={handleCreateGroup} variant='contained' color='primary'>
+                                创建
+                            </Button>
                         </DialogActions>
                     </Dialog>
 
                     {/* 新增站点对话框 */}
-                    <Dialog open={openAddSite} onClose={handleCloseAddSite} maxWidth="md" fullWidth>
+                    <Dialog open={openAddSite} onClose={handleCloseAddSite} maxWidth='md' fullWidth>
                         <DialogTitle>
                             新增站点
                             <IconButton
-                                aria-label="close"
+                                aria-label='close'
                                 onClick={handleCloseAddSite}
                                 sx={{
-                                    position: 'absolute',
+                                    position: "absolute",
                                     right: 8,
                                     top: 8,
                                 }}
@@ -1018,91 +1028,93 @@ function App() {
                             </IconButton>
                         </DialogTitle>
                         <DialogContent>
-                            <DialogContentText sx={{ mb: 2 }}>
-                                请输入新站点的信息
-                            </DialogContentText>
+                            <DialogContentText sx={{ mb: 2 }}>请输入新站点的信息</DialogContentText>
                             <Stack spacing={2}>
-                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                <Box sx={{ display: "flex", gap: 2 }}>
                                     <Box sx={{ flex: 1 }}>
                                         <TextField
                                             autoFocus
-                                            margin="dense"
-                                            id="site-name"
-                                            name="name"
-                                            label="站点名称"
-                                            type="text"
+                                            margin='dense'
+                                            id='site-name'
+                                            name='name'
+                                            label='站点名称'
+                                            type='text'
                                             fullWidth
-                                            variant="outlined"
+                                            variant='outlined'
                                             value={newSite.name}
                                             onChange={handleSiteInputChange}
                                         />
                                     </Box>
                                     <Box sx={{ flex: 1 }}>
                                         <TextField
-                                            margin="dense"
-                                            id="site-url"
-                                            name="url"
-                                            label="站点URL"
-                                            type="url"
+                                            margin='dense'
+                                            id='site-url'
+                                            name='url'
+                                            label='站点URL'
+                                            type='url'
                                             fullWidth
-                                            variant="outlined"
+                                            variant='outlined'
                                             value={newSite.url}
                                             onChange={handleSiteInputChange}
                                         />
                                     </Box>
                                 </Box>
                                 <TextField
-                                    margin="dense"
-                                    id="site-icon"
-                                    name="icon"
-                                    label="图标URL"
-                                    type="url"
+                                    margin='dense'
+                                    id='site-icon'
+                                    name='icon'
+                                    label='图标URL'
+                                    type='url'
                                     fullWidth
-                                    variant="outlined"
+                                    variant='outlined'
                                     value={newSite.icon}
                                     onChange={handleSiteInputChange}
                                 />
                                 <TextField
-                                    margin="dense"
-                                    id="site-description"
-                                    name="description"
-                                    label="站点描述"
-                                    type="text"
+                                    margin='dense'
+                                    id='site-description'
+                                    name='description'
+                                    label='站点描述'
+                                    type='text'
                                     fullWidth
-                                    variant="outlined"
+                                    variant='outlined'
                                     value={newSite.description}
                                     onChange={handleSiteInputChange}
                                 />
                                 <TextField
-                                    margin="dense"
-                                    id="site-notes"
-                                    name="notes"
-                                    label="备注"
-                                    type="text"
+                                    margin='dense'
+                                    id='site-notes'
+                                    name='notes'
+                                    label='备注'
+                                    type='text'
                                     fullWidth
                                     multiline
                                     rows={2}
-                                    variant="outlined"
+                                    variant='outlined'
                                     value={newSite.notes}
                                     onChange={handleSiteInputChange}
                                 />
                             </Stack>
                         </DialogContent>
                         <DialogActions sx={{ px: 3, pb: 3 }}>
-                            <Button onClick={handleCloseAddSite} variant="outlined">取消</Button>
-                            <Button onClick={handleCreateSite} variant="contained" color="primary">创建</Button>
+                            <Button onClick={handleCloseAddSite} variant='outlined'>
+                                取消
+                            </Button>
+                            <Button onClick={handleCreateSite} variant='contained' color='primary'>
+                                创建
+                            </Button>
                         </DialogActions>
                     </Dialog>
 
                     {/* 网站配置对话框 */}
-                    <Dialog open={openConfig} onClose={handleCloseConfig} maxWidth="md" fullWidth>
+                    <Dialog open={openConfig} onClose={handleCloseConfig} maxWidth='md' fullWidth>
                         <DialogTitle>
                             网站设置
                             <IconButton
-                                aria-label="close"
+                                aria-label='close'
                                 onClick={handleCloseConfig}
                                 sx={{
-                                    position: 'absolute',
+                                    position: "absolute",
                                     right: 8,
                                     top: 8,
                                 }}
@@ -1116,58 +1128,62 @@ function App() {
                             </DialogContentText>
                             <Stack spacing={2}>
                                 <TextField
-                                    margin="dense"
-                                    id="site-title"
-                                    name="site.title"
-                                    label="网站标题 (浏览器标签)"
-                                    type="text"
+                                    margin='dense'
+                                    id='site-title'
+                                    name='site.title'
+                                    label='网站标题 (浏览器标签)'
+                                    type='text'
                                     fullWidth
-                                    variant="outlined"
+                                    variant='outlined'
                                     value={tempConfigs["site.title"]}
                                     onChange={handleConfigInputChange}
                                 />
                                 <TextField
-                                    margin="dense"
-                                    id="site-name"
-                                    name="site.name"
-                                    label="网站名称 (显示在页面中)"
-                                    type="text"
+                                    margin='dense'
+                                    id='site-name'
+                                    name='site.name'
+                                    label='网站名称 (显示在页面中)'
+                                    type='text'
                                     fullWidth
-                                    variant="outlined"
+                                    variant='outlined'
                                     value={tempConfigs["site.name"]}
                                     onChange={handleConfigInputChange}
                                 />
                                 <TextField
-                                    margin="dense"
-                                    id="site-custom-css"
-                                    name="site.customCss"
-                                    label="自定义CSS"
-                                    type="text"
+                                    margin='dense'
+                                    id='site-custom-css'
+                                    name='site.customCss'
+                                    label='自定义CSS'
+                                    type='text'
                                     fullWidth
                                     multiline
                                     rows={6}
-                                    variant="outlined"
+                                    variant='outlined'
                                     value={tempConfigs["site.customCss"]}
                                     onChange={handleConfigInputChange}
-                                    placeholder="/* 自定义样式 */\nbody { }"
+                                    placeholder='/* 自定义样式 */\nbody { }'
                                 />
                             </Stack>
                         </DialogContent>
                         <DialogActions sx={{ px: 3, pb: 3 }}>
-                            <Button onClick={handleCloseConfig} variant="outlined">取消</Button>
-                            <Button onClick={handleSaveConfig} variant="contained" color="primary">保存设置</Button>
+                            <Button onClick={handleCloseConfig} variant='outlined'>
+                                取消
+                            </Button>
+                            <Button onClick={handleSaveConfig} variant='contained' color='primary'>
+                                保存设置
+                            </Button>
                         </DialogActions>
                     </Dialog>
 
                     {/* 导入数据对话框 */}
-                    <Dialog open={openImport} onClose={handleCloseImport} maxWidth="sm" fullWidth>
+                    <Dialog open={openImport} onClose={handleCloseImport} maxWidth='sm' fullWidth>
                         <DialogTitle>
                             导入数据
                             <IconButton
-                                aria-label="close"
+                                aria-label='close'
                                 onClick={handleCloseImport}
                                 sx={{
-                                    position: 'absolute',
+                                    position: "absolute",
                                     right: 8,
                                     top: 8,
                                 }}
@@ -1181,41 +1197,47 @@ function App() {
                             </DialogContentText>
                             <Box sx={{ mb: 2 }}>
                                 <Button
-                                    variant="outlined"
-                                    component="label"
+                                    variant='outlined'
+                                    component='label'
                                     startIcon={<FileUploadIcon />}
                                     sx={{ mb: 2 }}
                                 >
                                     选择文件
                                     <input
-                                        type="file"
+                                        type='file'
                                         hidden
-                                        accept=".json"
+                                        accept='.json'
                                         onChange={handleFileSelect}
                                     />
                                 </Button>
                                 {importFile && (
-                                    <Typography variant="body2" sx={{ mt: 1 }}>
+                                    <Typography variant='body2' sx={{ mt: 1 }}>
                                         已选择: {importFile.name}
                                     </Typography>
                                 )}
                             </Box>
                             {importError && (
-                                <Alert severity="error" sx={{ mb: 2 }}>
+                                <Alert severity='error' sx={{ mb: 2 }}>
                                     {importError}
                                 </Alert>
                             )}
                         </DialogContent>
                         <DialogActions sx={{ px: 3, pb: 3 }}>
-                            <Button onClick={handleCloseImport} variant="outlined">
+                            <Button onClick={handleCloseImport} variant='outlined'>
                                 取消
                             </Button>
                             <Button
                                 onClick={handleImportData}
-                                variant="contained"
-                                color="primary"
+                                variant='contained'
+                                color='primary'
                                 disabled={!importFile || importLoading}
-                                startIcon={importLoading ? <CircularProgress size={20} /> : <FileUploadIcon />}
+                                startIcon={
+                                    importLoading ? (
+                                        <CircularProgress size={20} />
+                                    ) : (
+                                        <FileUploadIcon />
+                                    )
+                                }
                             >
                                 {importLoading ? "导入中..." : "导入"}
                             </Button>
@@ -1223,34 +1245,34 @@ function App() {
                     </Dialog>
 
                     {/* GitHub角标 */}
-                    <Box 
-                        sx={{ 
-                            position: 'fixed', 
-                            bottom: 16, 
-                            right: 16, 
-                            zIndex: 10 
+                    <Box
+                        sx={{
+                            position: "fixed",
+                            bottom: 16,
+                            right: 16,
+                            zIndex: 10,
                         }}
                     >
                         <Paper
-                            component="a"
-                            href="https://github.com/zqq-nuli/Navihive"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            component='a'
+                            href='https://github.com/zqq-nuli/Navihive'
+                            target='_blank'
+                            rel='noopener noreferrer'
                             elevation={2}
                             sx={{
-                                display: 'flex',
-                                alignItems: 'center',
+                                display: "flex",
+                                alignItems: "center",
                                 p: 1,
                                 borderRadius: 10,
-                                bgcolor: 'background.paper',
-                                color: 'text.secondary',
-                                transition: 'all 0.3s ease-in-out',
-                                '&:hover': {
-                                    bgcolor: 'action.hover',
-                                    color: 'text.primary',
-                                    boxShadow: 4
+                                bgcolor: "background.paper",
+                                color: "text.secondary",
+                                transition: "all 0.3s ease-in-out",
+                                "&:hover": {
+                                    bgcolor: "action.hover",
+                                    color: "text.primary",
+                                    boxShadow: 4,
                                 },
-                                textDecoration: 'none'
+                                textDecoration: "none",
                             }}
                         >
                             <GitHubIcon />

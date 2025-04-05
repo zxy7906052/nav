@@ -23,7 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
-*-lock.yaml
-.wrangler/*
+# wrangler files
+.wrangler
+.dev.vars*
 pnpm-lock.yaml
+npm-lock.yaml
