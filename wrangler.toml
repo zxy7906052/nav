@@ -1,7 +1,7 @@
 # 项目配置
 name = "navigation-site"
 main = "dist/functions/api/[[path]].js"  # 保留此行，指定 Worker 入口点
-
+compatibility_date = "2022-04-05"
 # 页面配置
 [site]
 bucket = "./dist"
@@ -24,4 +24,3 @@ AUTH_ENABLED = "true"
 # AUTH_SECRET = "请在环境变量中设置"
 
 
-compatibility_date = "2022-04-05"
