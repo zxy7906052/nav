@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Site } from "../API/http";
+import { Site, Group } from "../API/http";
 import SiteCard from "./SiteCard";
 import { GroupWithSites } from "../types";
+import EditGroupDialog from "./EditGroupDialog";
 import {
     DndContext,
     closestCenter,
@@ -19,10 +20,11 @@ import {
     horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 // 引入Material UI组件
-import { Paper, Typography, Button, Box } from "@mui/material";
+import { Paper, Typography, Button, Box, IconButton, Tooltip } from "@mui/material";
 import SortIcon from "@mui/icons-material/Sort";
 import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
 
 // 更新组件属性接口
 interface GroupCardProps {
@@ -35,6 +37,8 @@ interface GroupCardProps {
     onSaveSiteOrder: (groupId: number, sites: Site[]) => void;
     onStartSiteSort: (groupId: number) => void;
     onAddSite?: (groupId: number) => void; // 新增添加卡片的可选回调函数
+    onUpdateGroup?: (group: Group) => void; // 更新分组的回调函数
+    onDeleteGroup?: (groupId: number) => void; // 删除分组的回调函数
 }
 
 const GroupCard: React.FC<GroupCardProps> = ({
@@ -46,9 +50,13 @@ const GroupCard: React.FC<GroupCardProps> = ({
     onSaveSiteOrder,
     onStartSiteSort,
     onAddSite,
+    onUpdateGroup,
+    onDeleteGroup,
 }) => {
     // 添加本地状态来管理站点排序
     const [sites, setSites] = useState<Site[]>(group.sites);
+    // 添加编辑弹窗的状态
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
 
     // 配置传感器，支持鼠标、触摸和键盘操作
     const sensors = useSensors(
@@ -84,6 +92,27 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 const newSites = arrayMove(sites, oldIndex, newIndex);
                 setSites(newSites);
             }
+        }
+    };
+
+    // 编辑分组处理函数
+    const handleEditClick = () => {
+        setEditDialogOpen(true);
+    };
+
+    // 更新分组处理函数
+    const handleUpdateGroup = (updatedGroup: Group) => {
+        if (onUpdateGroup) {
+            onUpdateGroup(updatedGroup);
+            setEditDialogOpen(false);
+        }
+    };
+
+    // 删除分组处理函数
+    const handleDeleteGroup = (groupId: number) => {
+        if (onDeleteGroup) {
+            onDeleteGroup(groupId);
+            setEditDialogOpen(false);
         }
     };
 
@@ -245,9 +274,21 @@ const GroupCard: React.FC<GroupCardProps> = ({
                                     size='small'
                                     startIcon={<SortIcon />}
                                     onClick={() => onStartSiteSort(group.id!)}
+                                    sx={{ mr: 1 }}
                                 >
                                     排序
                                 </Button>
+                                {onUpdateGroup && onDeleteGroup && (
+                                    <Tooltip title="编辑分组">
+                                        <IconButton 
+                                            color="primary" 
+                                            onClick={handleEditClick}
+                                            size="small"
+                                        >
+                                            <EditIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
                             </>
                         )
                     )}
@@ -256,6 +297,17 @@ const GroupCard: React.FC<GroupCardProps> = ({
 
             {/* 站点卡片区域 */}
             {renderSites()}
+
+            {/* 编辑分组弹窗 */}
+            {onUpdateGroup && onDeleteGroup && (
+                <EditGroupDialog
+                    open={editDialogOpen}
+                    group={group}
+                    onClose={() => setEditDialogOpen(false)}
+                    onSave={handleUpdateGroup}
+                    onDelete={handleDeleteGroup}
+                />
+            )}
         </Paper>
     );
 };
