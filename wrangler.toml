@@ -22,3 +22,6 @@ AUTH_ENABLED = "true"
 # AUTH_USERNAME = "请在环境变量中设置"
 # AUTH_PASSWORD = "请在环境变量中设置"
 # AUTH_SECRET = "请在环境变量中设置"
+
+
+compatibility_date = "2022-04-05"
