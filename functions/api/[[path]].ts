@@ -218,8 +218,8 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
                 return new Response("无效的认证信息", { status: 401 });
             }
 
-            // 验证Token有效性
-            const verifyResult = api.verifyToken(token);
+            // 验证Token有效性 - 改为异步调用
+            const verifyResult = await api.verifyToken(token);
             if (!verifyResult.valid) {
                 return new Response("认证已过期或无效，请重新登录", { status: 401 });
             }

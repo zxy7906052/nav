@@ -1,7 +1,7 @@
 // src/api/http.ts
 import { D1Database } from "@cloudflare/workers-types";
-// 添加标准JWT库
-import * as jwt from 'jsonwebtoken';
+// 使用jose库替代jsonwebtoken
+import * as jose from 'jose';
 
 // 定义环境变量接口
 interface Env {
@@ -118,7 +118,7 @@ export class NavigationAPI {
         if (!this.authEnabled) {
             return {
                 success: true,
-                token: this.generateToken({ username: "guest" }),
+                token: await this.generateToken({ username: "guest" }),
                 message: "身份验证未启用，默认登录成功"
             };
         }
@@ -126,7 +126,7 @@ export class NavigationAPI {
         // 验证用户名和密码
         if (loginRequest.username === this.username && loginRequest.password === this.password) {
             // 生成JWT令牌
-            const token = this.generateToken({ username: loginRequest.username });
+            const token = await this.generateToken({ username: loginRequest.username });
             return {
                 success: true,
                 token,
@@ -141,15 +141,19 @@ export class NavigationAPI {
     }
 
     // 验证令牌有效性
-    verifyToken(token: string): { valid: boolean; payload?: Record<string, unknown> } {
+    async verifyToken(token: string): Promise<{ valid: boolean; payload?: Record<string, unknown> }> {
         if (!this.authEnabled) {
             return { valid: true };
         }
 
         try {
-            // 使用标准JWT库验证token
-            const decoded = jwt.verify(token, this.secret) as Record<string, unknown>;
-            return { valid: true, payload: decoded };
+            // 使用jose库验证token
+            const encoder = new TextEncoder();
+            const secretKey = encoder.encode(this.secret);
+            
+            // 解析JWT并验证
+            const { payload } = await jose.jwtVerify(token, secretKey);
+            return { valid: true, payload: payload as Record<string, unknown> };
         } catch (error) {
             console.error("Token验证失败:", error);
             return { valid: false };
@@ -157,15 +161,21 @@ export class NavigationAPI {
     }
 
     // 生成JWT令牌
-    private generateToken(payload: Record<string, unknown>): string {
-        // 使用标准JWT库生成token
+    private async generateToken(payload: Record<string, unknown>): Promise<string> {
+        // 使用jose库生成token
+        const encoder = new TextEncoder();
+        const secretKey = encoder.encode(this.secret);
+        
         const tokenPayload = {
             ...payload,
             exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24小时过期
             iat: Math.floor(Date.now() / 1000)
         };
         
-        return jwt.sign(tokenPayload, this.secret, { algorithm: 'HS256' });
+        // 创建新的JWT
+        return await new jose.SignJWT(tokenPayload)
+            .setProtectedHeader({ alg: 'HS256' })
+            .sign(secretKey);
     }
 
     // 检查认证是否启用
