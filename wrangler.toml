@@ -2,10 +2,13 @@
 name = "navigation-site"
 main = "dist/functions/api/[[path]].js"  # 保留此行，指定 Worker 入口点
 compatibility_date = "2022-04-05"
+
 # 页面配置
+
 [site]
 bucket = "./dist"
 include = ["dist"]
+exclude = ["/functions/**/*"]  # 排除API代码，避免冲突
 
 # D1数据库绑定
 [[d1_databases]]
