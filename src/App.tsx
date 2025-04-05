@@ -817,6 +817,30 @@ function App() {
         );
     }
 
+    // 更新分组
+    const handleGroupUpdate = async (updatedGroup: Group) => {
+        try {
+            if (updatedGroup.id) {
+                await api.updateGroup(updatedGroup.id, updatedGroup);
+                await fetchData(); // 重新加载数据
+            }
+        } catch (error) {
+            console.error("更新分组失败:", error);
+            handleError("更新分组失败: " + (error as Error).message);
+        }
+    };
+
+    // 删除分组
+    const handleGroupDelete = async (groupId: number) => {
+        try {
+            await api.deleteGroup(groupId);
+            await fetchData(); // 重新加载数据
+        } catch (error) {
+            console.error("删除分组失败:", error);
+            handleError("删除分组失败: " + (error as Error).message);
+        }
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
@@ -1031,6 +1055,8 @@ function App() {
                                             onSaveSiteOrder={handleSaveSiteOrder}
                                             onStartSiteSort={startSiteSort}
                                             onAddSite={handleOpenAddSite}
+                                            onUpdateGroup={handleGroupUpdate}
+                                            onDeleteGroup={handleGroupDelete}
                                         />
                                     ))}
                                 </Stack>
