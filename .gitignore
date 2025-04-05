@@ -26,3 +26,4 @@ dist-ssr
 .env
 *-lock.yaml
 .wrangler/*
+pnpm-lock.yaml
