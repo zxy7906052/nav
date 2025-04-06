@@ -120,7 +120,7 @@ const SiteCard = memo(function SiteCard({
                     <Box
                         sx={{
                             height: "100%",
-                            p: 2,
+                            p: { xs: 1.5, sm: 2 },
                             cursor: "grab",
                             display: "flex",
                             flexDirection: "column",
@@ -132,7 +132,7 @@ const SiteCard = memo(function SiteCard({
                         {/* 图标和名称 */}
                         <Box display='flex' alignItems='center' mb={1}>
                             {!iconError && site.icon ? (
-                                <Box position='relative' mr={1.5} width={32} height={32}>
+                                <Box position='relative' mr={1.5} width={32} height={32} flexShrink={0}>
                                     <Skeleton
                                         variant='rounded'
                                         width={32}
@@ -178,7 +178,14 @@ const SiteCard = memo(function SiteCard({
                                     {fallbackIcon}
                                 </Box>
                             )}
-                            <Typography variant='subtitle1' fontWeight='medium' noWrap>
+                            <Typography
+                                variant='subtitle1'
+                                fontWeight='medium'
+                                noWrap
+                                sx={{
+                                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                                }}
+                            >
                                 {site.name}
                             </Typography>
                         </Box>
@@ -193,6 +200,7 @@ const SiteCard = memo(function SiteCard({
                                 WebkitBoxOrient: "vertical",
                                 overflow: "hidden",
                                 flexGrow: 1,
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
                             }}
                         >
                             {site.description || "暂无描述"}
@@ -206,12 +214,14 @@ const SiteCard = memo(function SiteCard({
                                 height: "100%",
                                 display: "flex",
                                 flexDirection: "column",
+                                p: { xs: 1.5, sm: 2 },
+                                "&:last-child": { pb: { xs: 1.5, sm: 2 } },
                             }}
                         >
                             {/* 图标和名称 */}
                             <Box display='flex' alignItems='center' mb={1}>
                                 {!iconError && site.icon ? (
-                                    <Box position='relative' mr={1.5} width={32} height={32}>
+                                    <Box position='relative' mr={1.5} width={32} height={32} flexShrink={0}>
                                         <Skeleton
                                             variant='rounded'
                                             width={32}
@@ -257,7 +267,14 @@ const SiteCard = memo(function SiteCard({
                                         {fallbackIcon}
                                     </Box>
                                 )}
-                                <Typography variant='subtitle1' fontWeight='medium' noWrap>
+                                <Typography
+                                    variant='subtitle1'
+                                    fontWeight='medium'
+                                    noWrap
+                                    sx={{
+                                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                                    }}
+                                >
                                     {site.name}
                                 </Typography>
                             </Box>
@@ -272,6 +289,7 @@ const SiteCard = memo(function SiteCard({
                                     WebkitBoxOrient: "vertical",
                                     overflow: "hidden",
                                     flexGrow: 1,
+                                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
                                 }}
                             >
                                 {site.description || "暂无描述"}

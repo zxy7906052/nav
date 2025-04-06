@@ -883,6 +883,8 @@ function App() {
                             justifyContent: "space-between",
                             alignItems: "center",
                             mb: 5,
+                            flexDirection: { xs: "column", sm: "row" },
+                            gap: { xs: 2, sm: 0 }
                         }}
                     >
                         <Typography
@@ -890,10 +892,22 @@ function App() {
                             component='h1'
                             fontWeight='bold'
                             color='text.primary'
+                            sx={{ 
+                                fontSize: { xs: '1.75rem', sm: '2.125rem', md: '3rem' },
+                                textAlign: { xs: 'center', sm: 'left' }
+                            }}
                         >
                             {configs["site.name"]}
                         </Typography>
-                        <Stack direction='row' spacing={2} alignItems='center'>
+                        <Stack 
+                            direction={{ xs: 'row', sm: 'row' }} 
+                            spacing={{ xs: 1, sm: 2 }} 
+                            alignItems="center"
+                            width={{ xs: '100%', sm: 'auto' }}
+                            justifyContent={{ xs: 'center', sm: 'flex-end' }}
+                            flexWrap="wrap"
+                            sx={{ gap: { xs: 1, sm: 2 }, py: { xs: 1, sm: 0 } }}
+                        >
                             {sortMode !== SortMode.None ? (
                                 <>
                                     {sortMode === SortMode.GroupSort && (
@@ -902,6 +916,11 @@ function App() {
                                             color='primary'
                                             startIcon={<SaveIcon />}
                                             onClick={handleSaveGroupOrder}
+                                            size="small"
+                                            sx={{ 
+                                                minWidth: 'auto',
+                                                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                            }}
                                         >
                                             保存分组顺序
                                         </Button>
@@ -911,6 +930,11 @@ function App() {
                                         color='inherit'
                                         startIcon={<CancelIcon />}
                                         onClick={cancelSort}
+                                        size="small"
+                                        sx={{ 
+                                            minWidth: 'auto',
+                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                        }}
                                     >
                                         取消编辑
                                     </Button>
@@ -922,6 +946,11 @@ function App() {
                                         color='primary'
                                         startIcon={<AddIcon />}
                                         onClick={handleOpenAddGroup}
+                                        size="small"
+                                        sx={{ 
+                                            minWidth: 'auto',
+                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                        }}
                                     >
                                         新增分组
                                     </Button>
@@ -934,6 +963,11 @@ function App() {
                                         aria-controls={openMenu ? "navigation-menu" : undefined}
                                         aria-haspopup='true'
                                         aria-expanded={openMenu ? "true" : undefined}
+                                        size="small"
+                                        sx={{ 
+                                            minWidth: 'auto',
+                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                        }}
                                     >
                                         更多选项
                                     </Button>
@@ -1070,6 +1104,12 @@ function App() {
                         onClose={handleCloseAddGroup}
                         maxWidth='sm'
                         fullWidth
+                        PaperProps={{
+                            sx: {
+                                m: { xs: 2, sm: 'auto' },
+                                width: { xs: 'calc(100% - 32px)', sm: 'auto' }
+                            }
+                        }}
                     >
                         <DialogTitle>
                             新增分组
@@ -1112,7 +1152,18 @@ function App() {
                     </Dialog>
 
                     {/* 新增站点对话框 */}
-                    <Dialog open={openAddSite} onClose={handleCloseAddSite} maxWidth='md' fullWidth>
+                    <Dialog 
+                        open={openAddSite} 
+                        onClose={handleCloseAddSite} 
+                        maxWidth='md' 
+                        fullWidth
+                        PaperProps={{
+                            sx: {
+                                m: { xs: 2, sm: 'auto' },
+                                width: { xs: 'calc(100% - 32px)', sm: 'auto' }
+                            }
+                        }}
+                    >
                         <DialogTitle>
                             新增站点
                             <IconButton
@@ -1130,7 +1181,7 @@ function App() {
                         <DialogContent>
                             <DialogContentText sx={{ mb: 2 }}>请输入新站点的信息</DialogContentText>
                             <Stack spacing={2}>
-                                <Box sx={{ display: "flex", gap: 2 }}>
+                                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                                     <Box sx={{ flex: 1 }}>
                                         <TextField
                                             autoFocus
@@ -1207,7 +1258,18 @@ function App() {
                     </Dialog>
 
                     {/* 网站配置对话框 */}
-                    <Dialog open={openConfig} onClose={handleCloseConfig} maxWidth='md' fullWidth>
+                    <Dialog 
+                        open={openConfig} 
+                        onClose={handleCloseConfig} 
+                        maxWidth='md' 
+                        fullWidth
+                        PaperProps={{
+                            sx: {
+                                m: { xs: 2, sm: 'auto' },
+                                width: { xs: 'calc(100% - 32px)', sm: 'auto' }
+                            }
+                        }}
+                    >
                         <DialogTitle>
                             网站设置
                             <IconButton
@@ -1276,7 +1338,18 @@ function App() {
                     </Dialog>
 
                     {/* 导入数据对话框 */}
-                    <Dialog open={openImport} onClose={handleCloseImport} maxWidth='sm' fullWidth>
+                    <Dialog 
+                        open={openImport} 
+                        onClose={handleCloseImport} 
+                        maxWidth='sm' 
+                        fullWidth
+                        PaperProps={{
+                            sx: {
+                                m: { xs: 2, sm: 'auto' },
+                                width: { xs: 'calc(100% - 32px)', sm: 'auto' }
+                            }
+                        }}
+                    >
                         <DialogTitle>
                             导入数据
                             <IconButton
@@ -1344,12 +1417,12 @@ function App() {
                         </DialogActions>
                     </Dialog>
 
-                    {/* GitHub角标 */}
+                    {/* GitHub角标 - 在移动端调整位置 */}
                     <Box
                         sx={{
                             position: "fixed",
-                            bottom: 16,
-                            right: 16,
+                            bottom: { xs: 8, sm: 16 },
+                            right: { xs: 8, sm: 16 },
                             zIndex: 10,
                         }}
                     >

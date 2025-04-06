@@ -194,11 +194,11 @@ const GroupCard: React.FC<GroupCardProps> = ({
                         key={site.id}
                         sx={{
                             width: {
-                                xs: "50%",
+                                xs: "100%",
                                 sm: "50%",
-                                md: "25%",
+                                md: "33.33%",
                                 lg: "25%",
-                                xl: "25%",
+                                xl: "20%",
                             },
                             padding: 1, // 内部间距，更均匀的分布
                             boxSizing: "border-box", // 确保padding不影响宽度计算
@@ -227,7 +227,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
             elevation={sortMode === "None" ? 2 : 3}
             sx={{
                 borderRadius: 4,
-                p: 3,
+                p: { xs: 2, sm: 3 },
                 transition: "all 0.3s ease-in-out",
                 border: "1px solid transparent",
                 "&:hover": {
@@ -237,12 +237,34 @@ const GroupCard: React.FC<GroupCardProps> = ({
                 },
             }}
         >
-            <Box display='flex' justifyContent='space-between' alignItems='center' mb={2.5}>
-                <Typography variant='h5' component='h2' fontWeight='600' color='text.primary'>
+            <Box 
+                display='flex' 
+                flexDirection={{ xs: 'column', sm: 'row' }}
+                justifyContent='space-between' 
+                alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                mb={2.5}
+                gap={1}
+            >
+                <Typography 
+                    variant='h5' 
+                    component='h2' 
+                    fontWeight='600' 
+                    color='text.primary'
+                    sx={{ mb: { xs: 1, sm: 0 } }}
+                >
                     {group.name}
                 </Typography>
 
-                <Box>
+                <Box 
+                    sx={{ 
+                        display: 'flex', 
+                        flexDirection: { xs: 'row', sm: 'row' }, 
+                        gap: 1,
+                        width: { xs: '100%', sm: 'auto' },
+                        flexWrap: 'wrap',
+                        justifyContent: { xs: 'flex-start', sm: 'flex-end' }
+                    }}
+                >
                     {isCurrentEditingGroup ? (
                         <Button
                             variant='contained'
@@ -250,6 +272,10 @@ const GroupCard: React.FC<GroupCardProps> = ({
                             size='small'
                             startIcon={<SaveIcon />}
                             onClick={handleSaveSiteOrder}
+                            sx={{ 
+                                minWidth: 'auto',
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                            }}
                         >
                             保存顺序
                         </Button>
@@ -262,8 +288,11 @@ const GroupCard: React.FC<GroupCardProps> = ({
                                         color='primary'
                                         size='small'
                                         onClick={() => onAddSite(group.id!)}
-                                        sx={{ mr: 1 }}
                                         startIcon={<AddIcon />}
+                                        sx={{ 
+                                            minWidth: 'auto',
+                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                        }}
                                     >
                                         添加卡片
                                     </Button>
@@ -274,16 +303,21 @@ const GroupCard: React.FC<GroupCardProps> = ({
                                     size='small'
                                     startIcon={<SortIcon />}
                                     onClick={() => onStartSiteSort(group.id!)}
-                                    sx={{ mr: 1 }}
+                                    sx={{ 
+                                        minWidth: 'auto',
+                                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                    }}
                                 >
                                     排序
                                 </Button>
+                                
                                 {onUpdateGroup && onDeleteGroup && (
                                     <Tooltip title="编辑分组">
                                         <IconButton 
                                             color="primary" 
                                             onClick={handleEditClick}
                                             size="small"
+                                            sx={{ alignSelf: 'center' }}
                                         >
                                             <EditIcon />
                                         </IconButton>
