@@ -386,7 +386,7 @@ A: NaviHive 使用两个主要表格：
 - 通过微信赞赏支持我的持续开发
 
 <div align="center">
-  ![4b965550184c06d8164f8077fa42b5d.jpg](https://img.zhengmi.org/file/1743956440128_4b965550184c06d8164f8077fa42b5d.jpg)
+  ![](https://img.zhengmi.org/file/1743956440128_4b965550184c06d8164f8077fa42b5d.jpg)
 </div>
 
 **NaviHive** - 让网站导航更简单、更美观！
