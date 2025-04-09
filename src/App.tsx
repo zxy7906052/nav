@@ -641,14 +641,28 @@ function App() {
     const handleExportData = async () => {
         try {
             setLoading(true);
+            
+            // 提取所有站点数据为单独的数组
+            const allSites: Site[] = [];
+            groups.forEach(group => {
+                if (group.sites && group.sites.length > 0) {
+                    allSites.push(...group.sites);
+                }
+            });
+            
             const exportData = {
+                // 只导出分组基本信息，不包含站点
                 groups: groups.map(group => ({
                     id: group.id,
                     name: group.name,
                     order_num: group.order_num,
-                    sites: group.sites,
                 })),
+                // 站点数据作为单独的顶级数组
+                sites: allSites,
                 configs: configs,
+                // 添加版本和导出日期
+                version: "1.0",
+                exportDate: new Date().toISOString(),
             };
 
             // 创建并下载JSON文件
