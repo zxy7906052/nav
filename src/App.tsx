@@ -177,6 +177,9 @@ function App() {
     // 错误提示框状态
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
+    // 导入结果提示框状态
+    const [importResultOpen, setImportResultOpen] = useState(false);
+    const [importResultMessage, setImportResultMessage] = useState("");
 
     // 菜单打开关闭
     const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -754,8 +757,8 @@ function App() {
                             `卡片：发现${stats.sites.total}个，新建${stats.sites.created}个，更新${stats.sites.updated}个，跳过${stats.sites.skipped}个`
                         ].join("\n");
                         
-                        // 使用alert或snackbar显示结果
-                        alert(summary);
+                        setImportResultMessage(summary);
+                        setImportResultOpen(true);
                     }
 
                     // 刷新数据
@@ -873,6 +876,31 @@ function App() {
                     sx={{ width: "100%" }}
                 >
                     {snackbarMessage}
+                </Alert>
+            </Snackbar>
+
+            {/* 导入结果提示 Snackbar */}
+            <Snackbar
+                open={importResultOpen}
+                autoHideDuration={6000}
+                onClose={() => setImportResultOpen(false)}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+                <Alert
+                    onClose={() => setImportResultOpen(false)}
+                    severity='success'
+                    variant='filled'
+                    sx={{
+                        width: "100%",
+                        whiteSpace: 'pre-line',
+                        backgroundColor: theme => theme.palette.mode === 'dark' ? '#2e7d32' : undefined,
+                        color: theme => theme.palette.mode === 'dark' ? '#fff' : undefined,
+                        '& .MuiAlert-icon': {
+                            color: theme => theme.palette.mode === 'dark' ? '#fff' : undefined
+                        }
+                    }}
+                >
+                    {importResultMessage}
                 </Alert>
             </Snackbar>
 
