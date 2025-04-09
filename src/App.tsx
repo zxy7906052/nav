@@ -715,33 +715,33 @@ function App() {
                     if (!importData.groups || !Array.isArray(importData.groups)) {
                         throw new Error("导入文件格式错误：缺少分组数据");
                     }
-
-                    // 导入分组和站点
-                    // 这里简化处理，实际应用中可能需要更复杂的导入逻辑
-                    for (const group of importData.groups) {
-                        // 创建分组
-                        const createdGroup = await api.createGroup({
-                            name: group.name,
-                            order_num: group.order_num,
-                        } as Group);
-
-                        // 创建站点
-                        if (group.sites && Array.isArray(group.sites)) {
-                            for (const site of group.sites) {
-                                await api.createSite({
-                                    ...site,
-                                    group_id: createdGroup.id,
-                                    id: undefined, // 不传入id，让数据库自动生成新id
-                                } as Site);
-                            }
-                        }
+                    
+                    if (!importData.sites || !Array.isArray(importData.sites)) {
+                        throw new Error("导入文件格式错误：缺少站点数据");
+                    }
+                    
+                    if (!importData.configs || typeof importData.configs !== "object") {
+                        throw new Error("导入文件格式错误：缺少配置数据");
                     }
 
-                    // 导入配置
-                    if (importData.configs) {
-                        for (const [key, value] of Object.entries(importData.configs)) {
-                            await api.setConfig(key, value as string);
-                        }
+                    // 调用API导入数据
+                    const result = await api.importData(importData);
+                    
+                    if (!result.success) {
+                        throw new Error(result.error || "导入失败");
+                    }
+                    
+                    // 显示导入结果统计
+                    const stats = result.stats;
+                    if (stats) {
+                        const summary = [
+                            `导入成功！`,
+                            `分组：发现${stats.groups.total}个，新建${stats.groups.created}个，合并${stats.groups.merged}个`,
+                            `卡片：发现${stats.sites.total}个，新建${stats.sites.created}个，更新${stats.sites.updated}个，跳过${stats.sites.skipped}个`
+                        ].join("\n");
+                        
+                        // 使用alert或snackbar显示结果
+                        alert(summary);
                     }
 
                     // 刷新数据

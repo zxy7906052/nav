@@ -1,4 +1,4 @@
-import { Group, Site, LoginResponse, ExportData } from "./http";
+import { Group, Site, LoginResponse, ExportData, ImportResult } from "./http";
 
 // 模拟数据
 const mockGroups: Group[] = [
@@ -329,33 +329,118 @@ export class MockNavigationClient {
     }
     
     // 数据导入
-    async importData(data: ExportData): Promise<boolean> {
+    async importData(data: ExportData): Promise<ImportResult> {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         try {
-            // 清空现有数据
-            mockSites.length = 0;
-            mockGroups.length = 0;
+            // 统计信息
+            const stats = {
+                groups: {
+                    total: data.groups.length,
+                    created: 0,
+                    merged: 0
+                },
+                sites: {
+                    total: data.sites.length,
+                    created: 0,
+                    updated: 0,
+                    skipped: 0
+                }
+            };
             
-            // 导入分组数据
-            data.groups.forEach(group => {
-                mockGroups.push({...group});
-            });
+            // 模拟合并处理
+            // 为分组创建映射 - 旧ID到新ID
+            const groupMap = new Map<number, number>();
             
-            // 导入站点数据
-            data.sites.forEach(site => {
-                mockSites.push({...site});
-            });
+            // 处理分组
+            for (const importGroup of data.groups) {
+                // 检查是否存在同名分组
+                const existingGroupIndex = mockGroups.findIndex(g => g.name === importGroup.name);
+                
+                if (existingGroupIndex >= 0) {
+                    // 已存在同名分组，添加到映射
+                    if (importGroup.id) {
+                        groupMap.set(importGroup.id, mockGroups[existingGroupIndex].id as number);
+                    }
+                    stats.groups.merged++;
+                } else {
+                    // 创建新分组
+                    const newId = Math.max(0, ...mockGroups.map(g => g.id || 0)) + 1;
+                    const newGroup = {
+                        ...importGroup,
+                        id: newId,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+                    
+                    mockGroups.push(newGroup);
+                    
+                    // 添加到映射
+                    if (importGroup.id) {
+                        groupMap.set(importGroup.id, newId);
+                    }
+                    stats.groups.created++;
+                }
+            }
+            
+            // 处理站点
+            for (const importSite of data.sites) {
+                // 获取新分组ID
+                const newGroupId = groupMap.get(importSite.group_id);
+                
+                // 如果没有映射的分组ID，跳过该站点
+                if (!newGroupId) {
+                    stats.sites.skipped++;
+                    continue;
+                }
+                
+                // 检查是否有相同URL的站点在同一分组下
+                const existingSiteIndex = mockSites.findIndex(
+                    s => s.group_id === newGroupId && s.url === importSite.url
+                );
+                
+                if (existingSiteIndex >= 0) {
+                    // 更新现有站点
+                    mockSites[existingSiteIndex] = {
+                        ...mockSites[existingSiteIndex],
+                        name: importSite.name,
+                        icon: importSite.icon,
+                        description: importSite.description,
+                        notes: importSite.notes,
+                        updated_at: new Date().toISOString()
+                    };
+                    stats.sites.updated++;
+                } else {
+                    // 创建新站点
+                    const newId = Math.max(0, ...mockSites.map(s => s.id || 0)) + 1;
+                    const newSite = {
+                        ...importSite,
+                        id: newId,
+                        group_id: newGroupId, // 使用新的分组ID
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+                    
+                    mockSites.push(newSite);
+                    stats.sites.created++;
+                }
+            }
             
             // 导入配置数据
             Object.entries(data.configs).forEach(([key, value]) => {
                 mockConfigs[key] = value;
             });
             
-            return true;
+            return {
+                success: true,
+                stats
+            };
         } catch (error) {
             console.error("模拟导入数据失败:", error);
-            return false;
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : "未知错误"
+            };
         }
     }
 }

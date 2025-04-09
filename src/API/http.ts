@@ -61,13 +61,32 @@ export interface Config {
     updated_at?: string;
 }
 
-// 导出数据接口
+// 扩展导出数据接口，添加导入结果类型
 export interface ExportData {
     groups: Group[];
     sites: Site[];
     configs: Record<string, string>;
     version: string;
     exportDate: string;
+}
+
+// 导入结果接口
+export interface ImportResult {
+    success: boolean;
+    stats?: {
+        groups: {
+            total: number;
+            created: number;
+            merged: number;
+        };
+        sites: {
+            total: number;
+            created: number;
+            updated: number;
+            skipped: number;
+        };
+    };
+    error?: string;
 }
 
 // 新增用户登录接口
@@ -95,7 +114,7 @@ export class NavigationAPI {
         this.authEnabled = env.AUTH_ENABLED === "true";
         this.username = env.AUTH_USERNAME || "";
         this.password = env.AUTH_PASSWORD || "";
-        this.secret = env.AUTH_SECRET || "默认密钥，建议在生产环境中设置";
+        this.secret = env.AUTH_SECRET || "DefaultSecretKey";
     }
 
     // 初始化数据库表
@@ -522,39 +541,96 @@ export class NavigationAPI {
     }
 
     // 导入所有数据
-    async importData(data: ExportData): Promise<boolean> {
+    async importData(data: ExportData): Promise<ImportResult> {
         try {
-            // 使用事务确保数据完整性
-            // 清空现有数据
-            await this.db.exec("DELETE FROM sites");
-            await this.db.exec("DELETE FROM groups");
+            // 创建新旧分组ID的映射
+            const groupMap = new Map<number, number>();
+            
+            // 统计信息
+            const stats = {
+                groups: {
+                    total: data.groups.length,
+                    created: 0,
+                    merged: 0
+                },
+                sites: {
+                    total: data.sites.length,
+                    created: 0,
+                    updated: 0,
+                    skipped: 0
+                }
+            };
 
             // 导入分组数据
             for (const group of data.groups) {
-                await this.createGroup({
-                    name: group.name,
-                    order_num: group.order_num,
-                });
-            }
-
-            // 获取新创建的分组，用于映射ID
-            const newGroups = await this.getGroups();
-            const groupMap = new Map<number, number>();
-
-            // 创建旧ID到新ID的映射
-            data.groups.forEach((oldGroup, index) => {
-                if (oldGroup.id && index < newGroups.length) {
-                    groupMap.set(oldGroup.id, newGroups[index].id as number);
+                // 检查是否已存在同名分组
+                const existingGroup = await this.getGroupByName(group.name);
+                
+                if (existingGroup) {
+                    // 如果存在同名分组，使用现有分组ID
+                    if (group.id) {
+                        groupMap.set(group.id, existingGroup.id as number);
+                    }
+                    
+                    // 可选：更新分组顺序（如果需要）
+                    // 此处可以决定是否需要更新现有分组的order_num
+                    // 如果需要，可以执行：
+                    // await this.updateGroup(existingGroup.id as number, { order_num: group.order_num });
+                    
+                    stats.groups.merged++;
+                } else {
+                    // 如果不存在同名分组，创建新分组
+                    const newGroup = await this.createGroup({
+                        name: group.name,
+                        order_num: group.order_num,
+                    });
+                    
+                    // 添加到映射
+                    if (group.id && newGroup.id) {
+                        groupMap.set(group.id, newGroup.id);
+                    }
+                    
+                    stats.groups.created++;
                 }
-            });
+            }
 
             // 导入站点数据，更新分组ID
             for (const site of data.sites) {
-                const newGroupId = groupMap.get(site.group_id) || site.group_id;
-                await this.createSite({
-                    ...site,
-                    group_id: newGroupId,
-                });
+                // 获取新的分组ID
+                const newGroupId = groupMap.get(site.group_id);
+                
+                // 如果没有映射到新ID（可能是因为分组被过滤掉），则跳过该站点
+                if (!newGroupId) {
+                    console.warn(`无法为站点"${site.name}"找到对应的分组ID，已跳过`);
+                    stats.sites.skipped++;
+                    continue;
+                }
+                
+                // 检查该分组下是否已存在相同URL的站点
+                const existingSite = await this.getSiteByGroupIdAndUrl(newGroupId, site.url);
+                
+                if (existingSite) {
+                    // 如果存在相同URL的站点，可以选择更新或跳过
+                    // 这里选择更新站点信息（名称、图标、描述等）
+                    await this.updateSite(existingSite.id as number, {
+                        name: site.name,
+                        icon: site.icon,
+                        description: site.description,
+                        notes: site.notes,
+                        // 不更新order_num以保持现有排序
+                    });
+                    
+                    stats.sites.updated++;
+                } else {
+                    // 如果不存在相同URL的站点，创建新站点
+                    await this.createSite({
+                        ...site,
+                        id: undefined, // 不使用旧ID
+                        group_id: newGroupId,
+                    });
+                    
+                    stats.sites.created++;
+                }
             }
 
             // 导入配置数据
@@ -565,11 +641,35 @@ export class NavigationAPI {
                 }
             }
 
-            return true;
+            return {
+                success: true,
+                stats
+            };
         } catch (error) {
             console.error("导入数据失败:", error);
-            return false;
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : "未知错误"
+            };
         }
+    }
+
+    // 根据名称查询分组
+    async getGroupByName(name: string): Promise<Group | null> {
+        const result = await this.db
+            .prepare("SELECT id, name, order_num, created_at, updated_at FROM groups WHERE name = ?")
+            .bind(name)
+            .first<Group>();
+        return result;
+    }
+    
+    // 查询特定分组下是否已存在指定URL的站点
+    async getSiteByGroupIdAndUrl(groupId: number, url: string): Promise<Site | null> {
+        const result = await this.db
+            .prepare("SELECT id, group_id, name, url, icon, description, notes, order_num, created_at, updated_at FROM sites WHERE group_id = ? AND url = ?")
+            .bind(groupId, url)
+            .first<Site>();
+        return result;
     }
 }
 

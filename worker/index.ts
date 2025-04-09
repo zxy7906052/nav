@@ -370,7 +370,7 @@ export default {
                     }
 
                     const result = await api.importData(data as ExportData);
-                    return Response.json({ success: result });
+                    return Response.json(result);
                 }
 
                 // 默认返回404

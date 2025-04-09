@@ -1,4 +1,4 @@
-import { Group, Site, LoginResponse, ExportData } from "./http";
+import { Group, Site, LoginResponse, ExportData, ImportResult } from "./http";
 
 export class NavigationClient {
     private baseUrl: string;
@@ -227,11 +227,11 @@ export class NavigationClient {
     }
     
     // 数据导入
-    async importData(data: ExportData): Promise<boolean> {
+    async importData(data: ExportData): Promise<ImportResult> {
         const response = await this.request("import", {
             method: "POST",
             body: JSON.stringify(data),
         });
-        return response.success;
+        return response;
     }
 }
