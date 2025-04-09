@@ -20,7 +20,7 @@ import {
     horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 // 引入Material UI组件
-import { Paper, Typography, Button, Box, IconButton, Tooltip } from "@mui/material";
+import { Paper, Typography, Button, Box, IconButton, Tooltip, Snackbar, Alert } from "@mui/material";
 import SortIcon from "@mui/icons-material/Sort";
 import SaveIcon from "@mui/icons-material/Save";
 import AddIcon from "@mui/icons-material/Add";
@@ -57,6 +57,9 @@ const GroupCard: React.FC<GroupCardProps> = ({
     const [sites, setSites] = useState<Site[]>(group.sites);
     // 添加编辑弹窗的状态
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    // 添加提示消息状态
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
 
     // 配置传感器，支持鼠标、触摸和键盘操作
     const sensors = useSensors(
@@ -221,6 +224,21 @@ const GroupCard: React.FC<GroupCardProps> = ({
         onSaveSiteOrder(group.id!, sites);
     };
 
+    // 处理排序按钮点击
+    const handleSortClick = () => {
+        if (group.sites.length < 2) {
+            setSnackbarMessage("至少需要2个站点才能进行排序");
+            setSnackbarOpen(true);
+            return;
+        }
+        onStartSiteSort(group.id!);
+    };
+
+    // 关闭提示消息
+    const handleCloseSnackbar = () => {
+        setSnackbarOpen(false);
+    };
+
     // 正常模式或站点排序模式下渲染完整的分组卡片
     return (
         <Paper
@@ -302,7 +320,7 @@ const GroupCard: React.FC<GroupCardProps> = ({
                                     color='primary'
                                     size='small'
                                     startIcon={<SortIcon />}
-                                    onClick={() => onStartSiteSort(group.id!)}
+                                    onClick={handleSortClick}
                                     sx={{ 
                                         minWidth: 'auto',
                                         fontSize: { xs: '0.75rem', sm: '0.875rem' }
@@ -342,6 +360,17 @@ const GroupCard: React.FC<GroupCardProps> = ({
                     onDelete={handleDeleteGroup}
                 />
             )}
+
+            {/* 提示消息 */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+            >
+                <Alert onClose={handleCloseSnackbar} severity="info" sx={{ width: '100%' }}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Paper>
     );
 };
