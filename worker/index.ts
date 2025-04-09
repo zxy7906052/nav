@@ -322,7 +322,7 @@ export default {
                         return Response.json(
                             {
                                 success: false,
-                                message: "配置值不能为空",
+                                message: "配置值必须提供，可以为空字符串",
                             },
                             { status: 400 }
                         );
@@ -550,8 +550,8 @@ function validateSite(data: SiteInput): {
 function validateConfig(data: ConfigInput): { valid: boolean; errors?: string[] } {
     const errors: string[] = [];
 
-    if (!data.value || typeof data.value !== "string") {
-        errors.push("配置值不能为空且必须是字符串");
+    if (data.value === undefined || typeof data.value !== "string") {
+        errors.push("配置值必须是字符串类型");
     }
 
     return { valid: errors.length === 0, errors };
