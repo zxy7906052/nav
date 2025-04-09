@@ -388,4 +388,9 @@ A: NaviHive 使用两个主要表格：
   <img src="https://img.zhengmi.org/file/1743956440128_4b965550184c06d8164f8077fa42b5d.jpg" alt="微信赞赏码" width="300">
 </div>
 
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=zqq-nuli/Cloudflare-Navihive&type=Date)](https://www.star-history.com/#zqq-nuli/Cloudflare-Navihive&Date)
+
 **NaviHive** - 让网站导航更简单、更美观！
