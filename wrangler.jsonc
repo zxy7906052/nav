@@ -24,7 +24,7 @@
     "vars": {
         "AUTH_ENABLED": "true",
         "AUTH_USERNAME": "richardli",
-        "AUTH_PASSWORD": "richardli",
-        "AUTH_SECRET": "richardli"
+        "AUTH_PASSWORD": "adminroot",
+        "AUTH_SECRET": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijk1YjY4ZWVjLWQ2ZWYtNDBmZC05ZGRlLTA3ZjZkZGY2YjNlYyJ9.7X0kroKlBhLe04GNNgHqGrmlK_q9HjWNi3I_08MOosM"
     }
 }
