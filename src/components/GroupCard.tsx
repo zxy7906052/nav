@@ -275,6 +275,10 @@ const GroupCard: React.FC<GroupCardProps> = ({
                     borderColor: "divider",
                     transform: sortMode === "None" ? "scale(1.01)" : "none",
                 },
+                backgroundColor: theme => theme.palette.mode === "dark" 
+                    ? "rgba(33, 33, 33, 0.95)" 
+                    : "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(5px)",
             }}
         >
             <Box 
