@@ -50,6 +50,7 @@ import {
     ListItemIcon,
     ListItemText,
     Snackbar,
+    InputAdornment,
 } from "@mui/material";
 import SortIcon from "@mui/icons-material/Sort";
 import SaveIcon from "@mui/icons-material/Save";
@@ -62,6 +63,7 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 
 // 根据环境选择使用真实API还是模拟API
 const isDevEnvironment = import.meta.env.DEV;
@@ -77,6 +79,25 @@ enum SortMode {
     None, // 不排序
     GroupSort, // 分组排序
     SiteSort, // 站点排序
+}
+
+// 辅助函数：提取域名
+function extractDomain(url: string): string | null {
+    if (!url) return null;
+    
+    try {
+        // 尝试自动添加协议头，如果缺少的话
+        let fullUrl = url;
+        if (!/^https?:\/\//i.test(url)) {
+            fullUrl = 'http://' + url;
+        }
+        const parsedUrl = new URL(fullUrl);
+        return parsedUrl.hostname;
+    } catch (e) {
+        // 尝试备用方法
+        const match = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/im);
+        return match && match[1] ? match[1] : url;
+    }
 }
 
 // 默认配置
@@ -1268,6 +1289,34 @@ function App() {
                                     variant='outlined'
                                     value={newSite.icon}
                                     onChange={handleSiteInputChange}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => {
+                                                        if (!newSite.url) {
+                                                            handleError("请先输入站点URL");
+                                                            return;
+                                                        }
+                                                        const domain = extractDomain(newSite.url);
+                                                        if (domain) {
+                                                            const iconUrl = `https://www.faviconextractor.com/favicon/${domain}`;
+                                                            setNewSite({
+                                                                ...newSite,
+                                                                icon: iconUrl
+                                                            });
+                                                        } else {
+                                                            handleError("无法从URL中获取域名");
+                                                        }
+                                                    }}
+                                                    edge="end"
+                                                    title="自动获取图标"
+                                                >
+                                                    <AutoFixHighIcon />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
                                 />
                                 <TextField
                                     margin='dense'
