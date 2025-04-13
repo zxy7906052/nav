@@ -114,6 +114,10 @@ const SiteCard = memo(function SiteCard({
                           }
                         : {},
                     overflow: "hidden",
+                    backgroundColor: theme => theme.palette.mode === "dark" 
+                        ? "rgba(33, 33, 33, 0.9)" 
+                        : "rgba(255, 255, 255, 0.9)",
+                    backdropFilter: "blur(5px)",
                 }}
             >
                 {isEditMode ? (
