@@ -17,14 +17,14 @@
     "d1_databases": [
         {
             "binding": "DB",
-            "database_name": "navigation-db-local",
-            "database_id": "43ff28e1-42d6-4e53-9657-0702ae1353b6"
+            "database_name": "navigation-db",
+            "database_id": "b85f8b1f-3e7f-4712-8c76-42c3b56eff01"
         }
     ],
     "vars": {
         "AUTH_ENABLED": "true",
-        "AUTH_USERNAME": "linuxdo",
-        "AUTH_PASSWORD": "linuxdo",
-        "AUTH_SECRET": "linuxdo"
+        "AUTH_USERNAME": "richardli",
+        "AUTH_PASSWORD": "adminroot",
+        "AUTH_SECRET": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijk1YjY4ZWVjLWQ2ZWYtNDBmZC05ZGRlLTA3ZjZkZGY2YjNlYyJ9.7X0kroKlBhLe04GNNgHqGrmlK_q9HjWNi3I_08MOosM"
     }
 }

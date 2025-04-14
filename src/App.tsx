@@ -50,6 +50,8 @@ import {
     ListItemIcon,
     ListItemText,
     Snackbar,
+    InputAdornment,
+    Slider,
 } from "@mui/material";
 import SortIcon from "@mui/icons-material/Sort";
 import SaveIcon from "@mui/icons-material/Save";
@@ -62,6 +64,7 @@ import FileUploadIcon from "@mui/icons-material/FileUpload";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 
 // 根据环境选择使用真实API还是模拟API
 const isDevEnvironment = import.meta.env.DEV;
@@ -79,11 +82,32 @@ enum SortMode {
     SiteSort, // 站点排序
 }
 
+// 辅助函数：提取域名
+function extractDomain(url: string): string | null {
+    if (!url) return null;
+    
+    try {
+        // 尝试自动添加协议头，如果缺少的话
+        let fullUrl = url;
+        if (!/^https?:\/\//i.test(url)) {
+            fullUrl = 'http://' + url;
+        }
+        const parsedUrl = new URL(fullUrl);
+        return parsedUrl.hostname;
+    } catch (e) {
+        // 尝试备用方法
+        const match = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/im);
+        return match && match[1] ? match[1] : url;
+    }
+}
+
 // 默认配置
 const DEFAULT_CONFIGS = {
     "site.title": "导航站",
     "site.name": "导航站",
     "site.customCss": "",
+    "site.backgroundImage": "", // 背景图片URL
+    "site.backgroundOpacity": "0.15", // 背景蒙版透明度
 };
 
 function App() {
@@ -910,13 +934,50 @@ function App() {
                     bgcolor: "background.default",
                     color: "text.primary",
                     transition: "all 0.3s ease-in-out",
+                    position: "relative", // 添加相对定位，作为背景图片的容器
+                    overflow: "hidden", // 防止背景图片溢出
                 }}
             >
+                {/* 背景图片 */}
+                {configs["site.backgroundImage"] && (
+                    <>
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundImage: `url(${configs["site.backgroundImage"]})`,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
+                                backgroundRepeat: "no-repeat",
+                                zIndex: 0,
+                                "&::before": {
+                                    content: '""',
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: theme => 
+                                        theme.palette.mode === "dark" 
+                                            ? "rgba(0, 0, 0, " + (1 - Number(configs["site.backgroundOpacity"])) + ")" 
+                                            : "rgba(255, 255, 255, " + (1 - Number(configs["site.backgroundOpacity"])) + ")",
+                                    zIndex: 1,
+                                },
+                            }}
+                        />
+                    </>
+                )}
+                
                 <Container
                     maxWidth='lg'
                     sx={{
                         py: 4,
                         px: { xs: 2, sm: 3, md: 4 },
+                        position: "relative", // 使内容位于背景图片和蒙版之上
+                        zIndex: 2,
                     }}
                 >
                     <Box
@@ -1268,6 +1329,34 @@ function App() {
                                     variant='outlined'
                                     value={newSite.icon}
                                     onChange={handleSiteInputChange}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => {
+                                                        if (!newSite.url) {
+                                                            handleError("请先输入站点URL");
+                                                            return;
+                                                        }
+                                                        const domain = extractDomain(newSite.url);
+                                                        if (domain) {
+                                                            const iconUrl = `https://www.faviconextractor.com/favicon/${domain}`;
+                                                            setNewSite({
+                                                                ...newSite,
+                                                                icon: iconUrl
+                                                            });
+                                                        } else {
+                                                            handleError("无法从URL中获取域名");
+                                                        }
+                                                    }}
+                                                    edge="end"
+                                                    title="自动获取图标"
+                                                >
+                                                    <AutoFixHighIcon />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
                                 />
                                 <TextField
                                     margin='dense'
@@ -1360,6 +1449,49 @@ function App() {
                                     value={tempConfigs["site.name"]}
                                     onChange={handleConfigInputChange}
                                 />
+                                {/* 新增背景图片设置 */}
+                                <Box sx={{ mb: 1 }}>
+                                    <Typography variant="subtitle1" gutterBottom>
+                                        背景图片设置
+                                    </Typography>
+                                    <TextField
+                                        margin='dense'
+                                        id='site-background-image'
+                                        name='site.backgroundImage'
+                                        label='背景图片URL'
+                                        type='url'
+                                        fullWidth
+                                        variant='outlined'
+                                        value={tempConfigs["site.backgroundImage"]}
+                                        onChange={handleConfigInputChange}
+                                        placeholder='https://example.com/background.jpg'
+                                        helperText='输入图片URL，留空则不使用背景图片'
+                                    />
+                                    
+                                    <Box sx={{ mt: 2, mb: 1 }}>
+                                        <Typography variant="body2" color="text.secondary" id="background-opacity-slider" gutterBottom>
+                                            背景蒙版透明度: {Number(tempConfigs["site.backgroundOpacity"]).toFixed(2)}
+                                        </Typography>
+                                        <Slider
+                                            aria-labelledby="background-opacity-slider"
+                                            name="site.backgroundOpacity"
+                                            min={0}
+                                            max={1}
+                                            step={0.01}
+                                            valueLabelDisplay="auto"
+                                            value={Number(tempConfigs["site.backgroundOpacity"])}
+                                            onChange={(_, value) => {
+                                                setTempConfigs({
+                                                    ...tempConfigs,
+                                                    "site.backgroundOpacity": String(value),
+                                                });
+                                            }}
+                                        />
+                                        <Typography variant="caption" color="text.secondary">
+                                            值越大，背景图片越清晰，内容可能越难看清
+                                        </Typography>
+                                    </Box>
+                                </Box>
                                 <TextField
                                     margin='dense'
                                     id='site-custom-css'
