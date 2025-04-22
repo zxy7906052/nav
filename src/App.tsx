@@ -85,18 +85,18 @@ enum SortMode {
 // 辅助函数：提取域名
 function extractDomain(url: string): string | null {
     if (!url) return null;
-    
+
     try {
         // 尝试自动添加协议头，如果缺少的话
         let fullUrl = url;
         if (!/^https?:\/\//i.test(url)) {
-            fullUrl = 'http://' + url;
+            fullUrl = "http://" + url;
         }
         const parsedUrl = new URL(fullUrl);
         return parsedUrl.hostname;
-    } catch (e) {
+    } catch {
         // 尝试备用方法
-        const match = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/im);
+        const match = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:/\n?]+)/im);
         return match && match[1] ? match[1] : url;
     }
 }
@@ -263,13 +263,13 @@ function App() {
     };
 
     // 登录功能
-    const handleLogin = async (username: string, password: string) => {
+    const handleLogin = async (username: string, password: string, rememberMe: boolean = false) => {
         try {
             setLoginLoading(true);
             setLoginError(null);
 
             // 调用登录接口
-            const success = await api.login(username, password);
+            const success = await api.login(username, password, rememberMe);
 
             if (success) {
                 // 登录成功
@@ -669,7 +669,7 @@ function App() {
     const handleExportData = async () => {
         try {
             setLoading(true);
-            
+
             // 提取所有站点数据为单独的数组
             const allSites: Site[] = [];
             groups.forEach(group => {
@@ -677,7 +677,7 @@ function App() {
                     allSites.push(...group.sites);
                 }
             });
-            
+
             const exportData = {
                 // 只导出分组基本信息，不包含站点
                 groups: groups.map(group => ({
@@ -757,31 +757,31 @@ function App() {
                     if (!importData.groups || !Array.isArray(importData.groups)) {
                         throw new Error("导入文件格式错误：缺少分组数据");
                     }
-                    
+
                     if (!importData.sites || !Array.isArray(importData.sites)) {
                         throw new Error("导入文件格式错误：缺少站点数据");
                     }
-                    
+
                     if (!importData.configs || typeof importData.configs !== "object") {
                         throw new Error("导入文件格式错误：缺少配置数据");
                     }
 
                     // 调用API导入数据
                     const result = await api.importData(importData);
-                    
+
                     if (!result.success) {
                         throw new Error(result.error || "导入失败");
                     }
-                    
+
                     // 显示导入结果统计
                     const stats = result.stats;
                     if (stats) {
                         const summary = [
                             `导入成功！`,
                             `分组：发现${stats.groups.total}个，新建${stats.groups.created}个，合并${stats.groups.merged}个`,
-                            `卡片：发现${stats.sites.total}个，新建${stats.sites.created}个，更新${stats.sites.updated}个，跳过${stats.sites.skipped}个`
+                            `卡片：发现${stats.sites.total}个，新建${stats.sites.created}个，更新${stats.sites.updated}个，跳过${stats.sites.skipped}个`,
                         ].join("\n");
-                        
+
                         setImportResultMessage(summary);
                         setImportResultOpen(true);
                     }
@@ -917,12 +917,13 @@ function App() {
                     variant='filled'
                     sx={{
                         width: "100%",
-                        whiteSpace: 'pre-line',
-                        backgroundColor: theme => theme.palette.mode === 'dark' ? '#2e7d32' : undefined,
-                        color: theme => theme.palette.mode === 'dark' ? '#fff' : undefined,
-                        '& .MuiAlert-icon': {
-                            color: theme => theme.palette.mode === 'dark' ? '#fff' : undefined
-                        }
+                        whiteSpace: "pre-line",
+                        backgroundColor: theme =>
+                            theme.palette.mode === "dark" ? "#2e7d32" : undefined,
+                        color: theme => (theme.palette.mode === "dark" ? "#fff" : undefined),
+                        "& .MuiAlert-icon": {
+                            color: theme => (theme.palette.mode === "dark" ? "#fff" : undefined),
+                        },
                     }}
                 >
                     {importResultMessage}
@@ -961,17 +962,21 @@ function App() {
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
-                                    backgroundColor: theme => 
-                                        theme.palette.mode === "dark" 
-                                            ? "rgba(0, 0, 0, " + (1 - Number(configs["site.backgroundOpacity"])) + ")" 
-                                            : "rgba(255, 255, 255, " + (1 - Number(configs["site.backgroundOpacity"])) + ")",
+                                    backgroundColor: theme =>
+                                        theme.palette.mode === "dark"
+                                            ? "rgba(0, 0, 0, " +
+                                              (1 - Number(configs["site.backgroundOpacity"])) +
+                                              ")"
+                                            : "rgba(255, 255, 255, " +
+                                              (1 - Number(configs["site.backgroundOpacity"])) +
+                                              ")",
                                     zIndex: 1,
                                 },
                             }}
                         />
                     </>
                 )}
-                
+
                 <Container
                     maxWidth='lg'
                     sx={{
@@ -1333,7 +1338,7 @@ function App() {
                                     onChange={handleSiteInputChange}
                                     InputProps={{
                                         endAdornment: (
-                                            <InputAdornment position="end">
+                                            <InputAdornment position='end'>
                                                 <IconButton
                                                     onClick={() => {
                                                         if (!newSite.url) {
@@ -1342,18 +1347,23 @@ function App() {
                                                         }
                                                         const domain = extractDomain(newSite.url);
                                                         if (domain) {
-                                                            const actualIconApi = configs["site.iconApi"] || "https://www.faviconextractor.com/favicon/{domain}?larger=true";
-                                                            const iconUrl = actualIconApi.replace("{domain}", domain);
+                                                            const actualIconApi =
+                                                                configs["site.iconApi"] ||
+                                                                "https://www.faviconextractor.com/favicon/{domain}?larger=true";
+                                                            const iconUrl = actualIconApi.replace(
+                                                                "{domain}",
+                                                                domain
+                                                            );
                                                             setNewSite({
                                                                 ...newSite,
-                                                                icon: iconUrl
+                                                                icon: iconUrl,
                                                             });
                                                         } else {
                                                             handleError("无法从URL中获取域名");
                                                         }
                                                     }}
-                                                    edge="end"
-                                                    title="自动获取图标"
+                                                    edge='end'
+                                                    title='自动获取图标'
                                                 >
                                                     <AutoFixHighIcon />
                                                 </IconButton>
@@ -1454,7 +1464,7 @@ function App() {
                                 />
                                 {/* 获取图标API设置项 */}
                                 <Box sx={{ mb: 1 }}>
-                                    <Typography variant="subtitle1" gutterBottom>
+                                    <Typography variant='subtitle1' gutterBottom>
                                         获取图标API设置
                                     </Typography>
                                     <TextField
@@ -1473,7 +1483,7 @@ function App() {
                                 </Box>
                                 {/* 新增背景图片设置 */}
                                 <Box sx={{ mb: 1 }}>
-                                    <Typography variant="subtitle1" gutterBottom>
+                                    <Typography variant='subtitle1' gutterBottom>
                                         背景图片设置
                                     </Typography>
                                     <TextField
@@ -1489,18 +1499,26 @@ function App() {
                                         placeholder='https://example.com/background.jpg'
                                         helperText='输入图片URL，留空则不使用背景图片'
                                     />
-                                    
+
                                     <Box sx={{ mt: 2, mb: 1 }}>
-                                        <Typography variant="body2" color="text.secondary" id="background-opacity-slider" gutterBottom>
-                                            背景蒙版透明度: {Number(tempConfigs["site.backgroundOpacity"]).toFixed(2)}
+                                        <Typography
+                                            variant='body2'
+                                            color='text.secondary'
+                                            id='background-opacity-slider'
+                                            gutterBottom
+                                        >
+                                            背景蒙版透明度:{" "}
+                                            {Number(tempConfigs["site.backgroundOpacity"]).toFixed(
+                                                2
+                                            )}
                                         </Typography>
                                         <Slider
-                                            aria-labelledby="background-opacity-slider"
-                                            name="site.backgroundOpacity"
+                                            aria-labelledby='background-opacity-slider'
+                                            name='site.backgroundOpacity'
                                             min={0}
                                             max={1}
                                             step={0.01}
-                                            valueLabelDisplay="auto"
+                                            valueLabelDisplay='auto'
                                             value={Number(tempConfigs["site.backgroundOpacity"])}
                                             onChange={(_, value) => {
                                                 setTempConfigs({
@@ -1509,7 +1527,7 @@ function App() {
                                                 });
                                             }}
                                         />
-                                        <Typography variant="caption" color="text.secondary">
+                                        <Typography variant='caption' color='text.secondary'>
                                             值越大，背景图片越清晰，内容可能越难看清
                                         </Typography>
                                     </Box>
@@ -1661,4 +1679,3 @@ function App() {
 }
 
 export default App;
- 
