@@ -1212,12 +1212,13 @@ function App() {
                     <Dialog
                         open={openAddGroup}
                         onClose={handleCloseAddGroup}
-                        maxWidth='sm'
+                        maxWidth='md'
                         fullWidth
                         PaperProps={{
                             sx: {
-                                m: { xs: 2, sm: "auto" },
-                                width: { xs: "calc(100% - 32px)", sm: "auto" },
+                                m: { xs: 2, sm: 3, md: 4 },
+                                width: { xs: "calc(100% - 32px)", sm: "80%", md: "70%", lg: "60%" },
+                                maxWidth: { sm: "600px" },
                             },
                         }}
                     >
