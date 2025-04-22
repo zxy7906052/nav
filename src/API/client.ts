@@ -7,7 +7,7 @@ export class NavigationClient {
     constructor(baseUrl = "/api") {
         this.baseUrl = baseUrl;
         // 从本地存储加载令牌
-        this.token = localStorage.getItem('auth_token');
+        this.token = localStorage.getItem("auth_token");
     }
 
     // 检查是否已登录
@@ -18,38 +18,38 @@ export class NavigationClient {
     // 设置认证令牌
     setToken(token: string): void {
         this.token = token;
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem("auth_token", token);
     }
 
     // 清除认证令牌
     clearToken(): void {
         this.token = null;
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem("auth_token");
     }
 
     // 登录API
-    async login(username: string, password: string): Promise<LoginResponse> {
+    async login(username: string, password: string, rememberMe: boolean = false): Promise<LoginResponse> {
         try {
             const response = await fetch(`${this.baseUrl}/login`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json'
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, password, rememberMe }),
             });
 
             const data = await response.json();
-            
+
             if (data.success && data.token) {
                 this.setToken(data.token);
             }
-            
+
             return data;
         } catch (error) {
-            console.error('登录失败:', error);
+            console.error("登录失败:", error);
             return {
                 success: false,
-                message: '登录请求失败，请检查网络连接'
+                message: "登录请求失败，请检查网络连接",
             };
         }
     }
@@ -63,7 +63,7 @@ export class NavigationClient {
         const headers: Record<string, string> = {
             "Content-Type": "application/json",
         };
-        
+
         // 如果有认证令牌，则添加到请求头
         if (this.token) {
             headers["Authorization"] = `Bearer ${this.token}`;
@@ -94,13 +94,13 @@ export class NavigationClient {
             if (!this.token) {
                 return false;
             }
-            
+
             // 尝试获取配置，如果成功则表示已认证
             await this.getConfigs();
             return true;
         } catch (error) {
             console.log("认证检查:", error);
-            
+
             // 特定处理401错误
             if (error instanceof Error) {
                 if (error.message.includes("认证") || error.message.includes("API错误: 401")) {
@@ -108,7 +108,7 @@ export class NavigationClient {
                     return false;
                 }
             }
-            
+
             // 其他错误不影响认证状态，如果有token则认为已认证
             return !!this.token;
         }
@@ -225,7 +225,7 @@ export class NavigationClient {
     async exportData(): Promise<ExportData> {
         return this.request("export");
     }
-    
+
     // 数据导入
     async importData(data: ExportData): Promise<ImportResult> {
         const response = await this.request("import", {
