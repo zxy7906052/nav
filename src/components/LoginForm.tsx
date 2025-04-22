@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { TextField, Button, Typography, Box, CircularProgress, Alert, Paper } from "@mui/material";
+import { TextField, Button, Typography, Box, CircularProgress, Alert, Paper, FormControlLabel, Checkbox } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
 interface LoginFormProps {
-    onLogin: (username: string, password: string) => void;
+    onLogin: (username: string, password: string, rememberMe: boolean) => void;
     loading?: boolean;
     error?: string | null;
 }
@@ -11,10 +11,11 @@ interface LoginFormProps {
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin, loading = false, error = null }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onLogin(username, password);
+        onLogin(username, password, rememberMe);
     };
 
     return (
@@ -78,7 +79,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, loading = false, error =
                     </Alert>
                 )}
 
-                <Box component='form' onSubmit={handleSubmit} sx={{ mt: 1 }}>
+                <Box component="form" onSubmit={handleSubmit}>
                     <TextField
                         margin='normal'
                         required
@@ -105,7 +106,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, loading = false, error =
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         disabled={loading}
-                        sx={{ mb: 3 }}
+                        sx={{ mb: 2 }}
+                    />
+                    <FormControlLabel
+                        control={
+                            <Checkbox 
+                                value="remember" 
+                                color="primary" 
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                disabled={loading}
+                            />
+                        }
+                        label="记住我（一个月内免登录）"
+                        sx={{ mb: 2 }}
                     />
                     <Button
                         type='submit'
