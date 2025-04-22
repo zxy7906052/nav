@@ -93,6 +93,7 @@ export interface ImportResult {
 export interface LoginRequest {
     username: string;
     password: string;
+    rememberMe?: boolean; // 新增记住我选项
 }
 
 export interface LoginResponse {
@@ -160,15 +161,18 @@ export class NavigationAPI {
         if (!this.authEnabled) {
             return {
                 success: true,
-                token: await this.generateToken({ username: "guest" }),
+                token: await this.generateToken({ username: "guest" }, false),
                 message: "身份验证未启用，默认登录成功",
             };
         }
 
         // 验证用户名和密码
         if (loginRequest.username === this.username && loginRequest.password === this.password) {
-            // 生成JWT令牌
-            const token = await this.generateToken({ username: loginRequest.username });
+            // 生成JWT令牌，传递记住我参数
+            const token = await this.generateToken(
+                { username: loginRequest.username }, 
+                loginRequest.rememberMe || false
+            );
             return {
                 success: true,
                 token,
@@ -216,11 +220,15 @@ export class NavigationAPI {
     }
 
     // 生成JWT令牌
-    private async generateToken(payload: Record<string, unknown>): Promise<string> {
+    private async generateToken(payload: Record<string, unknown>, rememberMe: boolean = false): Promise<string> {
         // 准备payload
+        const expiresIn = rememberMe 
+            ? 30 * 24 * 60 * 60 // 30天 (一个月)
+            : 24 * 60 * 60;     // 24小时
+
         const tokenPayload = {
             ...payload,
-            exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24小时过期
+            exp: Math.floor(Date.now() / 1000) + expiresIn,
             iat: Math.floor(Date.now() / 1000),
         };
 
