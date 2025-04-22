@@ -140,17 +140,17 @@ export class MockNavigationClient {
     }
 
     // 登录API
-    async login(username: string, password: string): Promise<LoginResponse> {
+    async login(username: string, password: string, rememberMe: boolean = false): Promise<LoginResponse> {
         await new Promise(resolve => setTimeout(resolve, 500));
-        console.log(username, password);
+        console.log(username, password, rememberMe ? "记住登录" : "标准登录");
         // 模拟登录验证逻辑 - 在Mock环境中任何账号密码都能登录
-        const token = btoa(`${username}:${new Date().getTime()}`);
+        const token = btoa(`${username}:${new Date().getTime()}:${rememberMe}`);
         this.setToken(token);
 
         return {
             success: true,
             token: token,
-            message: "登录成功(模拟环境)"
+            message: `登录成功(模拟环境)${rememberMe ? "，已记住登录状态" : ""}`
         };
     }
 
